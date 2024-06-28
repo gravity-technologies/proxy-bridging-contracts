@@ -6,6 +6,7 @@ import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/Own
 import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IERC20Permit} from "@openzeppelin/contracts/token/ERC20/extensions/IERC20Permit.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
@@ -49,8 +50,6 @@ contract GRVTBridgeProxy is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     mapping(bytes32 l2DepositTxHash => bytes32 depositDataHash)
         public depositHappened;
 
-    // Functions for initialization and configuration
-    // onlyOwner is allowed to call
     function initialize(
         uint256 _chainID,
         address _bridgeHub,
@@ -82,7 +81,7 @@ contract GRVTBridgeProxy is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         emit TokenDisallowed(_token);
     }
 
-    // Core functions
+    // TODO: make non-payable
     function deposit(
         address _l2Receiver,
         address _l1Token,
@@ -92,13 +91,35 @@ contract GRVTBridgeProxy is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         bytes32 _r,
         bytes32 _s
     ) external payable nonReentrant returns (bytes32 txHash) {
+        return _deposit(
+            msg.sender,
+            _l2Receiver,
+            _l1Token,
+            _amount,
+            _deadline,
+            _v,
+            _r,
+            _s
+        );
+    }
+
+    function _deposit(
+        address _l1Sender,
+        address _l2Receiver,
+        address _l1Token,
+        uint256 _amount,
+        uint256 _deadline,
+        uint8 _v,
+        bytes32 _r,
+        bytes32 _s
+    ) private returns (bytes32 txHash) {
         require(
             allowedTokens[_l1Token],
             "GRVTBridgeProxy: L1 token not allowed"
         );
 
         _verifyDepositApprovalSignature(
-            msg.sender,
+            _l1Sender,
             _l2Receiver,
             _l1Token,
             _amount,
@@ -110,7 +131,7 @@ contract GRVTBridgeProxy is OwnableUpgradeable, ReentrancyGuardUpgradeable {
 
         address sharedBridge = address(bridgeHub.sharedBridge());
 
-        IERC20(_l1Token).safeTransferFrom(msg.sender, address(this), _amount);
+        IERC20(_l1Token).safeTransferFrom(_l1Sender, address(this), _amount);
         require(
             IERC20(_l1Token).approve(address(sharedBridge), _amount),
             "GRVTBridgeProxy: approve failed"
@@ -123,7 +144,7 @@ contract GRVTBridgeProxy is OwnableUpgradeable, ReentrancyGuardUpgradeable {
                 l2Value: 0,
                 l2GasLimit: 72000000,
                 l2GasPerPubdataByteLimit: 800,
-                refundRecipient: address(msg.sender),
+                refundRecipient: address(_l1Sender),
                 secondBridgeAddress: sharedBridge,
                 secondBridgeValue: 0,
                 secondBridgeCalldata: abi.encode(_l1Token, _amount, _l2Receiver)
@@ -134,7 +155,7 @@ contract GRVTBridgeProxy is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         // (first field is the proxy caller)
         // txHash is the canonicalTxHash for L2 transction
         bytes32 txDataHash = keccak256(
-            abi.encode(msg.sender, _l1Token, _amount)
+            abi.encode(_l1Sender, _l1Token, _amount)
         );
 
         depositHappened[txHash] = txDataHash;
@@ -142,7 +163,7 @@ contract GRVTBridgeProxy is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         emit BridgeProxyDepositInitiated(
             txDataHash,
             txHash,
-            msg.sender,
+            _l1Sender,
             _l2Receiver,
             _l1Token,
             _amount
