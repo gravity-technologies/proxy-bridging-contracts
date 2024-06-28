@@ -1,13 +1,27 @@
-# Sample Hardhat Project
+# GRVT Proxy Bridging Contracts
 
-This project demonstrates a basic Hardhat use case. It comes with a sample contract, a test for that contract, and a Hardhat Ignition module that deploys that contract.
+This project contains proxy bridging contracts for GRVT.
 
-Try running some of the following tasks:
+## Project Structure
 
+- `contracts/`: Smart contracts written in Solidity.
+- `test/`: Test files for the smart contracts.
+- `ignition/`: Ignition scripts for contract deployment.
+
+## Setup
 ```shell
-npx hardhat help
-npx hardhat test
-REPORT_GAS=true npx hardhat test
-npx hardhat node
-npx hardhat ignition deploy ./ignition/modules/Lock.ts
+yarn
+```
+
+## Run tests
+```shell
+yarn test
+REPORT_GAS=true yarn test
+```
+
+## Deploy
+This project is deployed with [Hardhat Ignition](https://hardhat.org/ignition). 
+### Localhost
+```shell
+yarn deploy --parameters ignition/local.dev.parameters.json --network localhost
 ```

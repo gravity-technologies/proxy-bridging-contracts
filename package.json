@@ -2,9 +2,6 @@
   "name": "l1-contracts",
   "version": "0.0.1",
   "license": "UNLICENSED",
-  "scripts": {
-    "compile": "hardhat compile"
-  },
   "devDependencies": {
     "@nomicfoundation/hardhat-chai-matchers": "^2.0.0",
     "@nomicfoundation/hardhat-ethers": "^3.0.0",
@@ -32,5 +29,12 @@
   },
   "dependencies": {
     "@openzeppelin/contracts": "4.9.5"
+  },
+  "scripts": {
+    "lint": "solhint -f table contracts/**/*.sol --ignore-path .solhintignore",
+    "lint:quiet": "solhint -q contracts/**/*.sol",
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "deploy": "hardhat ignition deploy ignition/modules/GRVTTransactionFilterer.ts"
   }
 }
