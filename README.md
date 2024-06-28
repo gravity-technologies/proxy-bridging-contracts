@@ -5,8 +5,8 @@ This project contains proxy bridging contracts for GRVT.
 ## Project Structure
 
 - `contracts/`: Smart contracts written in Solidity.
-- `test/`: Test files for the smart contracts.
 - `ignition/`: Ignition scripts for contract deployment.
+- `test/`: Test files for the smart contracts.
 
 ## Setup
 ```shell
