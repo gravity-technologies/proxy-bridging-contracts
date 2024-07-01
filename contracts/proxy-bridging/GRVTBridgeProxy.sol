@@ -13,6 +13,14 @@ import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
 import "../interfaces/IBridgeHub.sol";
 
+/**
+ * @title GRVTBridgeProxy
+ * @dev This contract wraps around the `requestL2TransactionTwoBridges` function of the `BridgeHub`
+ * and the `claimFailedDeposit` function of the `L1SharedBridge`. It ensures that only deposit requests
+ * with valid approval signatures from GRVT can be initiated.
+ * `GRVTTransactionFilterer`, which is registered with the Mailbox, ensures that only L1 -> L2 requests
+ * initiated by this proxy are processed.
+ */
 contract GRVTBridgeProxy is OwnableUpgradeable, ReentrancyGuardUpgradeable {
   using SafeERC20 for IERC20;
 
@@ -44,6 +52,22 @@ contract GRVTBridgeProxy is OwnableUpgradeable, ReentrancyGuardUpgradeable {
   mapping(bytes32 => bool) private usedDepositHashes;
   mapping(bytes32 l2DepositTxHash => bytes32 depositDataHash) public depositHappened;
 
+  /**
+   * @dev Checks if a token is allowed to be deposited through this proxy.
+   * @param _token The address of the token to be checked.
+   * @return A boolean indicating whether the token is allowed.
+   */
+  function isTokenAllowed(address _token) external view returns (bool) {
+    return allowedTokens[_token];
+  }
+
+  /**
+   * @dev Initializes the contract setting the initial chain ID, BridgeHub address, owner, and deposit approver.
+   * @param _chainID The ID of the chain this proxy is deployed on.
+   * @param _bridgeHub The address of the BridgeHub contract.
+   * @param _owner The address of the owner of this contract.
+   * @param _depositApprover The address responsible for approving deposit requests.
+   */
   function initialize(
     uint256 _chainID,
     address _bridgeHub,
@@ -61,20 +85,43 @@ contract GRVTBridgeProxy is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     emit Initialized(_chainID, _bridgeHub, _owner, _depositApprover);
   }
 
+  /**
+   * @dev Returns the address of the deposit approver.
+   * @return The address of the deposit approver.
+   */
   function getDepositApprover() external view returns (address) {
     return depositApprover;
   }
 
+  /**
+   * @dev Adds a token to the list of allowed tokens.
+   * @param _token The address of the token to be allowed.
+   */
   function addAllowedToken(address _token) external onlyOwner {
     allowedTokens[_token] = true;
     emit TokenAllowed(_token);
   }
 
+  /**
+   * @dev Removes a token from the list of allowed tokens.
+   * @param _token The address of the token to be disallowed.
+   */
   function removeAllowedToken(address _token) external onlyOwner {
     allowedTokens[_token] = false;
     emit TokenDisallowed(_token);
   }
 
+  /**
+   * @dev Initiates a deposit request. Ensures the request is signed by the deposit approver.
+   * @param _l2Receiver The address of the recipient on L2.
+   * @param _l1Token The address of the token being deposited.
+   * @param _amount The raw amount of the token being deposited.
+   * @param _deadline The deadline by which the deposit must be approved.
+   * @param _v The recovery byte of the signature.
+   * @param _r R of the ECDSA signature.
+   * @param _s S of the ECDSA signature.
+   * @return txHash The transaction hash of the L2 deposit transaction.
+   */
   // TODO: make non-payable
   function deposit(
     address _l2Receiver,
@@ -131,6 +178,17 @@ contract GRVTBridgeProxy is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     emit BridgeProxyDepositInitiated(txDataHash, txHash, _l1Sender, _l2Receiver, _l1Token, _amount);
   }
 
+  /**
+   * @dev Claims a failed deposit with proof of the failed transaction.
+   * @param _depositSender The address of the sender who initiated the deposit.
+   * @param _l1Token The address of the token being claimed.
+   * @param _amount The raw amount of the token being claimed.
+   * @param _l2TxHash The transaction hash of the failed L2 transaction.
+   * @param _l2BatchNumber The batch number of the L2 transaction.
+   * @param _l2MessageIndex The message index of the L2 transaction.
+   * @param _l2TxNumberInBatch The transaction number in the batch.
+   * @param _merkleProof The Merkle proof for the failed transaction.
+   */
   function claimFailedDeposit(
     address _depositSender,
     address _l1Token,
@@ -192,10 +250,6 @@ contract GRVTBridgeProxy is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     IERC20(_l1Token).safeTransfer(_depositSender, _amount);
 
     emit ClaimedFailedDepositBridgeProxy(_depositSender, _l1Token, _amount, sharedBridgeClaimSucceeded);
-  }
-
-  function isTokenAllowed(address _token) external view returns (bool) {
-    return allowedTokens[_token];
   }
 
   function _verifyDepositApprovalSignature(
