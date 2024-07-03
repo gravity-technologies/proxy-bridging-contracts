@@ -2,7 +2,7 @@ import hre from "hardhat"
 import { expect } from "chai"
 import { ethers } from "ethers"
 
-import { IL2Bridge__factory } from "../typechain-types/factories/contracts/interfaces/IL2Bridge__factory"
+import { IL2Bridge__factory } from "../typechain-types/factories/lib/era-contracts/l1-contracts/contracts/bridge/interfaces/IL2Bridge__factory"
 
 describe("GRVTTransactionFilterer", function () {
   async function deployGRVTTransactionFiltererFixture() {
