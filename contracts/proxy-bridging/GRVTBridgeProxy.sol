@@ -281,9 +281,9 @@ contract GRVTBridgeProxy is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     usedDepositHashes[msgHash] = true;
   }
 
-  bytes32 private constant eip712domainTypehash = keccak256("EIP712Domain(string name,string version,uint256 chainId)");
+  bytes32 private constant eip712DomainTypeHash = keccak256("EIP712Domain(string name,string version,uint256 chainId)");
   bytes32 private constant DOMAIN_SEPARATOR =
-    keccak256(abi.encode(eip712domainTypehash, keccak256(bytes("GRVT Exchange")), keccak256(bytes("0")), 1));
+    keccak256(abi.encode(eip712DomainTypeHash, keccak256(bytes("GRVT Exchange")), keccak256(bytes("0")), 1));
   bytes private constant PREFIXED_DOMAIN_SEPARATOR = abi.encodePacked("\x19\x01", DOMAIN_SEPARATOR);
 
   bytes32 private constant DEPOSIT_APPROVAL_TYPEHASH =
