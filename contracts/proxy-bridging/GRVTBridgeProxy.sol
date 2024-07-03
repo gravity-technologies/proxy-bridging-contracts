@@ -267,7 +267,7 @@ contract GRVTBridgeProxy is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     bytes32 msgHash = keccak256(
       abi.encodePacked(
         PREFIXED_DOMAIN_SEPARATOR,
-        _getDepositApprovalHash(_l1Sender, _l2Receiver, _l1Token, _amount, _deadline)
+        keccak256(abi.encode(DEPOSIT_APPROVAL_TYPEHASH, _l1Sender, _l2Receiver, _l1Token, _amount, _deadline))
       )
     );
 
@@ -288,14 +288,4 @@ contract GRVTBridgeProxy is OwnableUpgradeable, ReentrancyGuardUpgradeable {
 
   bytes32 private constant DEPOSIT_APPROVAL_TYPEHASH =
     keccak256("DepositApproval(address l1Sender,address l2Receiver,address l1Token,uint256 amount,uint256 deadline)");
-
-  function _getDepositApprovalHash(
-    address _l1Sender,
-    address _l2Receiver,
-    address _l1Token,
-    uint256 _amount,
-    uint256 _deadline
-  ) internal pure returns (bytes32) {
-    return keccak256(abi.encode(DEPOSIT_APPROVAL_TYPEHASH, _l1Sender, _l2Receiver, _l1Token, _amount, _deadline));
-  }
 }
