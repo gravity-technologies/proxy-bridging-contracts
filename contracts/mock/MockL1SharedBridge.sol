@@ -5,7 +5,7 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-import {L2TransactionRequestTwoBridgesInner} from "../interfaces/IL1SharedBridge.sol";
+import {L2TransactionRequestTwoBridgesInner} from "../../lib/era-contracts/l1-contracts/contracts/bridgehub/IBridgehub.sol";
 
 contract MockL1SharedBridge {
   using SafeERC20 for IERC20;

@@ -10,7 +10,9 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
-import "../interfaces/IBridgeHub.sol";
+import {IBridgehub, L2TransactionRequestTwoBridgesOuter} from "../../lib/era-contracts/l1-contracts/contracts/bridgehub/IBridgehub.sol";
+import {IL1SharedBridge} from "../../lib/era-contracts/l1-contracts/contracts/bridge/interfaces/IL1SharedBridge.sol";
+import {TxStatus} from "../../lib/era-contracts/l1-contracts/contracts/common/Messaging.sol";
 
 /**
  * @title GRVTBridgeProxy

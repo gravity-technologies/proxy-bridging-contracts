@@ -8,7 +8,7 @@ const config: HardhatUserConfig = {
   paths: {
     sources: "./contracts",
   },
-  solidity: "0.8.20",
+  solidity: "0.8.24",
   networks: {
     localhost: {
       url: "http://localhost:8545",

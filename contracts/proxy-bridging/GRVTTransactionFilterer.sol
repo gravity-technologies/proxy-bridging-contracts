@@ -2,8 +2,8 @@
 pragma solidity ^0.8.20;
 
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import {ITransactionFilterer} from "../interfaces/ITransactionFilterer.sol";
-import {IL2Bridge} from "../interfaces/IL2Bridge.sol";
+import {ITransactionFilterer} from "../../lib/era-contracts/l1-contracts/contracts/state-transition/chain-interfaces/ITransactionFilterer.sol";
+import {IL2Bridge} from "../../lib/era-contracts/l1-contracts/contracts/bridge/interfaces/IL2Bridge.sol";
 
 /**
  * @title GRVTTransactionFilterer

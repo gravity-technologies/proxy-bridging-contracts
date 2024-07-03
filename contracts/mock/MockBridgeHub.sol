@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import {IL1SharedBridge} from "../interfaces/IL1SharedBridge.sol";
-import {TxStatus} from "../interfaces/IL1SharedBridge.sol";
-import {L2TransactionRequestTwoBridgesOuter, L2TransactionRequestTwoBridgesInner} from "../interfaces/IL1SharedBridge.sol";
+import {IL1SharedBridge} from "../../lib/era-contracts/l1-contracts/contracts/bridge/interfaces/IL1SharedBridge.sol";
+import {TxStatus} from "../../lib/era-contracts/l1-contracts/contracts/common/Messaging.sol";
+import {L2TransactionRequestTwoBridgesOuter, L2TransactionRequestTwoBridgesInner} from "../../lib/era-contracts/l1-contracts/contracts/bridgehub/IBridgehub.sol";
 
 // Assuming IL1SharedBridge and TxStatus are defined elsewhere
 // interface IL1SharedBridge {}
