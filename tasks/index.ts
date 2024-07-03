@@ -1,6 +1,6 @@
-import { task } from "hardhat/config";
+import { task } from "hardhat/config"
 
-import { txConfirmation, generateSignature } from "../utils";
+import { txConfirmation, generateSignature } from "../utils"
 
 // import { IGovernance__factory } from "../typechain-types/factories/contracts/interfaces/IGovernance__factory";
 
@@ -48,22 +48,19 @@ task("bridge-erc20", "Bridge ERC20 tokens")
   .addParam("deadline", "The deposit deadline", "2000000000")
   .addParam("bridgeProxyAddress", "The address of the bridge proxy")
   .setAction(async (taskArgs, hre) => {
-    const { token, amount, bridgeProxyAddress, deadline } = taskArgs;
-    const [operator] = await hre.ethers.getSigners();
+    const { token, amount, bridgeProxyAddress, deadline } = taskArgs
+    const [operator] = await hre.ethers.getSigners()
 
-    const tokenAbi = [
-      "function approve(address spender, uint256 amount) external returns (bool)"
-    ];
+    const tokenAbi = ["function approve(address spender, uint256 amount) external returns (bool)"]
 
-    const tokenContract = new hre.ethers.Contract(token, tokenAbi, operator);
+    const tokenContract = new hre.ethers.Contract(token, tokenAbi, operator)
 
     await txConfirmation(tokenContract.approve(bridgeProxyAddress, amount))
-    console.log(
-      `GRVTBridgeProxy approved to spend ${amount} tokens at ${token}: `);
+    console.log(`GRVTBridgeProxy approved to spend ${amount} tokens at ${token}: `)
 
-    const bridgeProxy = await hre.ethers.getContractAt("GRVTBridgeProxy", bridgeProxyAddress);
+    const bridgeProxy = await hre.ethers.getContractAt("GRVTBridgeProxy", bridgeProxyAddress)
     await (await bridgeProxy.addAllowedToken(token)).wait()
-    console.log(`Allowed token ${token} added to GRVTBridgeProxy.`);
+    console.log(`Allowed token ${token} added to GRVTBridgeProxy.`)
 
     const sig = await generateSignature({
       l1Sender: operator.address,
@@ -71,14 +68,16 @@ task("bridge-erc20", "Bridge ERC20 tokens")
       l1Token: token,
       amount: amount,
       deadline: deadline,
-      wallet: operator
-    });
+      wallet: operator,
+    })
 
     console.log(
       "Bridge transaction: ",
-      await (await bridgeProxy.deposit(operator.address, token, amount, deadline, sig.v, sig.r, sig.s, {
-        value: hre.ethers.parseUnits("1000000000000", 18),
-        gasLimit: 2900000
-      })).wait()
-    );
-  });
+      await (
+        await bridgeProxy.deposit(operator.address, token, amount, deadline, sig.v, sig.r, sig.s, {
+          value: hre.ethers.parseUnits("1000000000000", 18),
+          gasLimit: 2900000,
+        })
+      ).wait()
+    )
+  })

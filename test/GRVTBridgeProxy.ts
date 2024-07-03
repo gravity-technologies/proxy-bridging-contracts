@@ -342,7 +342,7 @@ describe("GRVTBridgeProxy", function () {
 
     it("Should allow owner to set deposit approver", async function () {
       const { grvtBridgeProxy } = await deployGRVTBridgeProxyFixture({})
-      
+
       await expect(grvtBridgeProxy.setDepositApprover(testAddress))
         .to.emit(grvtBridgeProxy, "DepositApproverSet")
         .withArgs(testAddress)
