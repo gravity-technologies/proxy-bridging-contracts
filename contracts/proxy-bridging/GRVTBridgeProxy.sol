@@ -27,6 +27,8 @@ contract GRVTBridgeProxy is OwnableUpgradeable, ReentrancyGuardUpgradeable {
   event Initialized(uint256 chainID, address bridgeHub, address owner, address depositApprover);
   event TokenAllowed(address token);
   event TokenDisallowed(address token);
+  event BridgeHubSet(address indexed bridgeHub);
+  event DepositApproverSet(address indexed depositApprover);
 
   event BridgeProxyDepositInitiated(
     bytes32 indexed txDataHash,
@@ -85,13 +87,6 @@ contract GRVTBridgeProxy is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     emit Initialized(_chainID, _bridgeHub, _owner, _depositApprover);
   }
 
-  /**
-   * @dev Returns the address of the deposit approver.
-   * @return The address of the deposit approver.
-   */
-  function getDepositApprover() external view returns (address) {
-    return depositApprover;
-  }
 
   /**
    * @dev Adds a token to the list of allowed tokens.
@@ -109,6 +104,32 @@ contract GRVTBridgeProxy is OwnableUpgradeable, ReentrancyGuardUpgradeable {
   function removeAllowedToken(address _token) external onlyOwner {
     allowedTokens[_token] = false;
     emit TokenDisallowed(_token);
+  }
+
+  /**
+   * @dev Sets the BridgeHub contract address.
+   * @param _bridgeHub The address of the BridgeHub contract.
+   */
+  function setBridgeHub(address _bridgeHub) external onlyOwner {
+    bridgeHub = IBridgehub(_bridgeHub);
+    emit BridgeHubSet(_bridgeHub);
+  }
+
+  /**
+   * @dev Returns the address of the deposit approver.
+   * @return The address of the deposit approver.
+   */
+  function getDepositApprover() external view returns (address) {
+    return depositApprover;
+  }
+
+  /**
+   * @dev Sets the deposit approver address.
+   * @param _depositApprover The address of the deposit approver.
+   */
+  function setDepositApprover(address _depositApprover) external onlyOwner {
+    depositApprover = _depositApprover;
+    emit DepositApproverSet(_depositApprover);
   }
 
   /**

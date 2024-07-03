@@ -288,6 +288,74 @@ describe("GRVTBridgeProxy", function () {
       ).to.be.revertedWith("grvtBP: deposit did not happen")
     })
   })
+
+  describe("Setters", function () {
+    const testAddress = "0x0000000000000000000000000000000000000001"
+    it("Should allow owner to add allowed token", async function () {
+      const { grvtBridgeProxy } = await deployGRVTBridgeProxyFixture({})
+      await expect(grvtBridgeProxy.addAllowedToken(testAddress))
+        .to.emit(grvtBridgeProxy, "TokenAllowed")
+        .withArgs(testAddress)
+      expect(await grvtBridgeProxy.isTokenAllowed(testAddress)).to.be.true
+    })
+
+    it("Should not allow non-owner to add allowed token", async function () {
+      const { grvtBridgeProxy, rando } = await deployGRVTBridgeProxyFixture({})
+
+      const proxyAsRando = grvtBridgeProxy.connect(rando) as ethers.Contract
+      await expect(proxyAsRando.addAllowedToken(testAddress)).to.be.revertedWith("Ownable: caller is not the owner")
+    })
+
+    it("Should allow owner to remove allowed token", async function () {
+      const { grvtBridgeProxy } = await deployGRVTBridgeProxyFixture({})
+
+      await grvtBridgeProxy.addAllowedToken(testAddress)
+      await expect(grvtBridgeProxy.removeAllowedToken(testAddress))
+        .to.emit(grvtBridgeProxy, "TokenDisallowed")
+        .withArgs(testAddress)
+      expect(await grvtBridgeProxy.isTokenAllowed(testAddress)).to.be.false
+    })
+
+    it("Should not allow non-owner to remove allowed token", async function () {
+      const { grvtBridgeProxy, rando } = await deployGRVTBridgeProxyFixture({})
+
+      await grvtBridgeProxy.addAllowedToken(testAddress)
+      const proxyAsRando = grvtBridgeProxy.connect(rando) as ethers.Contract
+      await expect(proxyAsRando.removeAllowedToken(testAddress)).to.be.revertedWith("Ownable: caller is not the owner")
+    })
+
+    it("Should allow owner to set BridgeHub", async function () {
+      const { grvtBridgeProxy } = await deployGRVTBridgeProxyFixture({})
+
+      await expect(grvtBridgeProxy.setBridgeHub(testAddress))
+        .to.emit(grvtBridgeProxy, "BridgeHubSet")
+        .withArgs(testAddress)
+      expect(await grvtBridgeProxy.bridgeHub()).to.equal(testAddress)
+    })
+
+    it("Should not allow non-owner to set BridgeHub", async function () {
+      const { grvtBridgeProxy, rando } = await deployGRVTBridgeProxyFixture({})
+
+      const proxyAsRando = grvtBridgeProxy.connect(rando) as ethers.Contract
+      await expect(proxyAsRando.setBridgeHub(testAddress)).to.be.revertedWith("Ownable: caller is not the owner")
+    })
+
+    it("Should allow owner to set deposit approver", async function () {
+      const { grvtBridgeProxy } = await deployGRVTBridgeProxyFixture({})
+      
+      await expect(grvtBridgeProxy.setDepositApprover(testAddress))
+        .to.emit(grvtBridgeProxy, "DepositApproverSet")
+        .withArgs(testAddress)
+      expect(await grvtBridgeProxy.depositApprover()).to.equal(testAddress)
+    })
+
+    it("Should not allow non-owner to set deposit approver", async function () {
+      const { grvtBridgeProxy, rando } = await deployGRVTBridgeProxyFixture({})
+
+      const proxyAsRando = grvtBridgeProxy.connect(rando) as ethers.Contract
+      await expect(proxyAsRando.setDepositApprover(testAddress)).to.be.revertedWith("Ownable: caller is not the owner")
+    })
+  })
 })
 
 async function testClaimFailedDeposit(
