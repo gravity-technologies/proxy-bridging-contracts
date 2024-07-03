@@ -87,7 +87,6 @@ contract GRVTBridgeProxy is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     emit Initialized(_chainID, _bridgeHub, _owner, _depositApprover);
   }
 
-
   /**
    * @dev Adds a token to the list of allowed tokens.
    * @param _token The address of the token to be allowed.
