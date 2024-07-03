@@ -146,14 +146,14 @@ contract GRVTBridgeProxy is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     bytes32 _r,
     bytes32 _s
   ) private returns (bytes32 txHash) {
-    require(allowedTokens[_l1Token], "GRVTBridgeProxy: L1 token not allowed");
+    require(allowedTokens[_l1Token], "grvtBP: L1 token not allowed");
 
     _verifyDepositApprovalSignature(_l1Sender, _l2Receiver, _l1Token, _amount, _deadline, _v, _r, _s);
 
     address sharedBridge = address(bridgeHub.sharedBridge());
 
     IERC20(_l1Token).safeTransferFrom(_l1Sender, address(this), _amount);
-    require(IERC20(_l1Token).approve(address(sharedBridge), _amount), "GRVTBridgeProxy: approve failed");
+    require(IERC20(_l1Token).approve(address(sharedBridge), _amount), "grvtBP: approve failed");
 
     txHash = bridgeHub.requestL2TransactionTwoBridges{value: msg.value}(
       L2TransactionRequestTwoBridgesOuter({
@@ -210,15 +210,15 @@ contract GRVTBridgeProxy is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         _merkleProof: _merkleProof,
         _status: TxStatus.Failure
       });
-      require(proofValid, "GRVTBridgeProxy: invalid proof");
+      require(proofValid, "grvtBP: invalid proof");
     }
-    require(_amount > 0, "GRVTBridgeProxy: amount must be larger than 0");
+    require(_amount > 0, "grvtBP: amount must be larger than 0");
 
     // no legacy bridge check as that is not applicable for our chain
     bytes32 dataHash = depositHappened[_l2TxHash];
     bytes32 txDataHash = keccak256(abi.encode(_depositSender, _l1Token, _amount));
 
-    require(dataHash == txDataHash, "GRVTBridgeProxy: deposit didn not happen");
+    require(dataHash == txDataHash, "grvtBP: deposit did not happen");
     delete depositHappened[_l2TxHash];
 
     IL1SharedBridge sharedBridge = bridgeHub.sharedBridge();
@@ -263,7 +263,7 @@ contract GRVTBridgeProxy is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     bytes32 _r,
     bytes32 _s
   ) internal {
-    require(block.timestamp <= _deadline, "GRVTBridgeProxy: expired deadline");
+    require(block.timestamp <= _deadline, "grvtBP: expired deadline");
 
     bytes32 msgHash = keccak256(
       abi.encodePacked(
@@ -274,10 +274,10 @@ contract GRVTBridgeProxy is OwnableUpgradeable, ReentrancyGuardUpgradeable {
 
     // TODO: we can consider using nouce here, this imposes a limit of 1 tx per second, but requires
     // the signer service to read the nonce from the contract
-    require(!usedDepositHashes[msgHash], "GRVTBridgeProxy: deposit approval already used");
+    require(!usedDepositHashes[msgHash], "grvtBP: deposit approval already used");
 
     (address addr, ECDSA.RecoverError err) = ECDSA.tryRecover(msgHash, _v, _r, _s);
-    require(err == ECDSA.RecoverError.NoError && addr == depositApprover, "GRVTBridgeProxy: invalid signature");
+    require(err == ECDSA.RecoverError.NoError && addr == depositApprover, "grvtBP: invalid signature");
 
     usedDepositHashes[msgHash] = true;
   }
