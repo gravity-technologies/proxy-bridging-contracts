@@ -9,9 +9,11 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
-import {IBridgehub, L2TransactionRequestTwoBridgesOuter} from "../../lib/era-contracts/l1-contracts/contracts/bridgehub/IBridgehub.sol";
+import {IBridgehub, L2TransactionRequestTwoBridgesOuter, L2TransactionRequestDirect} from "../../lib/era-contracts/l1-contracts/contracts/bridgehub/IBridgehub.sol";
 import {IL1SharedBridge} from "../../lib/era-contracts/l1-contracts/contracts/bridge/interfaces/IL1SharedBridge.sol";
 import {TxStatus} from "../../lib/era-contracts/l1-contracts/contracts/common/Messaging.sol";
+import {REQUIRED_L2_GAS_PRICE_PER_PUBDATA} from "../../lib/era-contracts/l1-contracts/contracts/common/Config.sol";
+import {GRVTBaseToken} from "./GRVTBaseToken.sol";
 
 /**
  * @title GRVTBridgeProxy
@@ -24,7 +26,7 @@ import {TxStatus} from "../../lib/era-contracts/l1-contracts/contracts/common/Me
 contract GRVTBridgeProxy is OwnableUpgradeable, ReentrancyGuardUpgradeable {
   using SafeERC20 for IERC20;
 
-  event Initialized(uint256 chainID, address bridgeHub, address owner, address depositApprover);
+  event Initialized(uint256 chainID, address bridgeHub, address owner, address depositApprover, address baseToken);
   event TokenAllowed(address token);
   event TokenDisallowed(address token);
   event BridgeHubSet(address indexed bridgeHub);
@@ -46,9 +48,13 @@ contract GRVTBridgeProxy is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     bool sharedBridgeClaimSucceeded
   );
 
+  uint256 public constant L2_GAS_LIMIT_DEPOSIT = 683830;
+  uint256 public constant L2_GAS_LIMIT_MINT_BASE_TOKEN = 625236;
+
   uint256 public chainID;
   IBridgehub public bridgeHub;
   address public depositApprover;
+  GRVTBaseToken public baseToken;
 
   mapping(address => bool) private allowedTokens;
   mapping(bytes32 => bool) private usedDepositHashes;
@@ -69,22 +75,30 @@ contract GRVTBridgeProxy is OwnableUpgradeable, ReentrancyGuardUpgradeable {
    * @param _bridgeHub The address of the BridgeHub contract.
    * @param _owner The address of the owner of this contract.
    * @param _depositApprover The address responsible for approving deposit requests.
+   * @param _baseToken Base token of L2 chain, mintable by this contract
    */
   function initialize(
     uint256 _chainID,
     address _bridgeHub,
     address _owner,
-    address _depositApprover
+    address _depositApprover,
+    address _baseToken
   ) external initializer {
     chainID = _chainID;
     bridgeHub = IBridgehub(_bridgeHub);
     depositApprover = _depositApprover;
+    baseToken = GRVTBaseToken(_baseToken);
 
     require(_owner != address(0), "ShB owner 0");
     _transferOwnership(_owner);
 
     __ReentrancyGuard_init();
-    emit Initialized(_chainID, _bridgeHub, _owner, _depositApprover);
+    
+    emit Initialized(_chainID, _bridgeHub, _owner, _depositApprover, _baseToken);
+  }
+
+  function approveBaseToken(address to, uint256 amount) external onlyOwner returns (bool) {
+    return baseToken.approve(address(to), amount);
   }
 
   /**
@@ -131,8 +145,36 @@ contract GRVTBridgeProxy is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     emit DepositApproverSet(_depositApprover);
   }
 
+  // TODO: add NatSpec
+  // TODO: review gas limit
+  // TODO: add tests
+  function mintBaseTokenL2(
+    address _l2Receiver, 
+    uint256 _amount
+  ) external onlyOwner {
+    uint256 baseCost = l2TransactionBaseCost(L2_GAS_LIMIT_MINT_BASE_TOKEN);
+    uint256 mintValue = baseCost + _amount;
+
+    baseToken.mint(address(this), mintValue);
+    bridgeHub.requestL2TransactionDirect(L2TransactionRequestDirect({
+        chainId: chainID,
+        mintValue: mintValue,
+        l2Contract: _l2Receiver,
+        l2Value: _amount,
+        l2Calldata: new bytes(0),
+        l2GasLimit: L2_GAS_LIMIT_MINT_BASE_TOKEN,
+        l2GasPerPubdataByteLimit: REQUIRED_L2_GAS_PRICE_PER_PUBDATA,
+        factoryDeps: new bytes[](0),
+        refundRecipient: address(_l2Receiver)
+    }));
+  }
+
   /**
    * @dev Initiates a deposit request. Ensures the request is signed by the deposit approver.
+   * @dev Assumptions:
+   * @dev 1. enough base token allowance from this contract to shared bridge
+   * @dev 2. enough l1Token allowance from msg.sender to this contract
+   * @dev 3. this contract can mint base token
    * @param _l2Receiver The address of the recipient on L2.
    * @param _l1Token The address of the token being deposited.
    * @param _amount The raw amount of the token being deposited.
@@ -142,7 +184,6 @@ contract GRVTBridgeProxy is OwnableUpgradeable, ReentrancyGuardUpgradeable {
    * @param _s S of the ECDSA signature.
    * @return txHash The transaction hash of the L2 deposit transaction.
    */
-  // TODO: make non-payable
   function deposit(
     address _l2Receiver,
     address _l1Token,
@@ -151,7 +192,7 @@ contract GRVTBridgeProxy is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     uint8 _v,
     bytes32 _r,
     bytes32 _s
-  ) external payable nonReentrant returns (bytes32 txHash) {
+  ) external nonReentrant returns (bytes32 txHash) {
     return _deposit(msg.sender, _l2Receiver, _l1Token, _amount, _deadline, _v, _r, _s);
   }
 
@@ -174,13 +215,16 @@ contract GRVTBridgeProxy is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     IERC20(_l1Token).safeTransferFrom(_l1Sender, address(this), _amount);
     require(IERC20(_l1Token).approve(address(sharedBridge), _amount), "grvtBP: approve failed");
 
-    txHash = bridgeHub.requestL2TransactionTwoBridges{value: msg.value}(
+    uint256 baseCost = l2TransactionBaseCost(L2_GAS_LIMIT_DEPOSIT);
+    baseToken.mint(address(this), baseCost);
+
+    txHash = bridgeHub.requestL2TransactionTwoBridges(
       L2TransactionRequestTwoBridgesOuter({
         chainId: chainID,
-        mintValue: msg.value,
+        mintValue: baseCost,
         l2Value: 0,
-        l2GasLimit: 72000000,
-        l2GasPerPubdataByteLimit: 800,
+        l2GasLimit: L2_GAS_LIMIT_DEPOSIT,
+        l2GasPerPubdataByteLimit: REQUIRED_L2_GAS_PRICE_PER_PUBDATA,
         refundRecipient: address(_l1Sender),
         secondBridgeAddress: sharedBridge,
         secondBridgeValue: 0,
@@ -196,6 +240,12 @@ contract GRVTBridgeProxy is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     depositHappened[txHash] = txDataHash;
 
     emit BridgeProxyDepositInitiated(txDataHash, txHash, _l1Sender, _l2Receiver, _l1Token, _amount);
+  }
+
+  function l2TransactionBaseCost(
+    uint256 _l2GasLimit
+  ) private view returns (uint256) {
+    return bridgeHub.l2TransactionBaseCost(chainID, tx.gasprice, _l2GasLimit, REQUIRED_L2_GAS_PRICE_PER_PUBDATA);
   }
 
   /**

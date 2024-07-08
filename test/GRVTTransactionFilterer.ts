@@ -38,7 +38,7 @@ describe("GRVTTransactionFilterer", function () {
   })
 
   describe("Transaction filtering", function () {
-    it("Should allow a qualified transaction to pass", async function () {
+    it("Should allow a tx with qualified contract call", async function () {
       const { grvtTransactionFilterer, rando, l1SharedBridgeAddress, l2BridgeAddress, grvtBridgeProxyAddress } =
         await deployGRVTTransactionFiltererFixture()
       expect(
@@ -48,6 +48,36 @@ describe("GRVTTransactionFilterer", function () {
           0,
           0,
           await getDepositL2Calldata(grvtBridgeProxyAddress, rando.address, rando.address, 100),
+          hre.ethers.ZeroAddress
+        )
+      ).to.equal(true)
+    })
+
+    it("Should allow a send tx with non-zero L2 value", async function () {
+      const { grvtTransactionFilterer, rando, l1SharedBridgeAddress } =
+        await deployGRVTTransactionFiltererFixture()
+      expect(
+        await grvtTransactionFilterer.isTransactionAllowed(
+          l1SharedBridgeAddress,
+          rando.address,
+          0,
+          1,
+          "0x",
+          hre.ethers.ZeroAddress
+        )
+      ).to.equal(true)
+    })
+
+    it("Should reject a send tx with zero L2 value", async function () {
+      const { grvtTransactionFilterer, rando, l1SharedBridgeAddress } =
+        await deployGRVTTransactionFiltererFixture()
+      expect(
+        await grvtTransactionFilterer.isTransactionAllowed(
+          l1SharedBridgeAddress,
+          rando.address,
+          0,
+          1,
+          "0x",
           hre.ethers.ZeroAddress
         )
       ).to.equal(true)

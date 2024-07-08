@@ -20,5 +20,24 @@ const config: HardhatUserConfig = {
   }
 };
 
+task("check-balance", "Checks the ERC20 balance of an account")
+  .addParam("token", "The ERC20 token contract address")
+  .addParam("account", "The account address")
+  .setAction(async (taskArgs, hre) => {
+    const tokenAddress = taskArgs.token;
+    const accountAddress = taskArgs.account;
+
+    const ERC20_ABI = [
+      // The ERC20 Contract ABI, which is a list of functions and events of the contract
+      "function balanceOf(address owner) view returns (uint256)",
+    ];
+
+    const provider = hre.ethers.provider;
+    const tokenContract = new hre.ethers.Contract(tokenAddress, ERC20_ABI, provider);
+
+    const balance = await tokenContract.balanceOf(accountAddress);
+
+    console.log(`Balance of account ${accountAddress}: ${hre.ethers.formatUnits(balance, 18)} tokens`);
+  });
 
 export default config;

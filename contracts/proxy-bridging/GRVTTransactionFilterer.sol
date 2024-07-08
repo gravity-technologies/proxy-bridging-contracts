@@ -90,10 +90,15 @@ contract GRVTTransactionFilterer is OwnableUpgradeable, ITransactionFilterer {
     address sender,
     address contractL2,
     uint256,
-    uint256,
+    uint256 l2Value,
     bytes memory l2Calldata,
     address
   ) external view override returns (bool) {
+    // allow all base token deposit transactions
+    if (l2Calldata.length == 0 && l2Value > 0) {
+      return true;
+    }
+
     if (l2Calldata.length < 4) {
       return false;
     }

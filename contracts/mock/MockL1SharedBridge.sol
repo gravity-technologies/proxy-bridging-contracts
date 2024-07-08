@@ -38,6 +38,30 @@ contract MockL1SharedBridge {
     });
   }
 
+  function bridgehubDepositBaseToken(
+    uint256,
+    address _prevMsgSender,
+    address _l1Token,
+    uint256 _amount
+  ) external payable {
+    // The Bridgehub also checks this, but we want to be sure
+    require(msg.value == 0, "ShB m.v > 0 b d.it");
+
+    uint256 amount = _depositFunds(_prevMsgSender, IERC20(_l1Token), _amount); // note if _prevMsgSender is this contract, this will return 0. This does not happen.
+    require(amount == _amount, "3T"); // The token has non-standard transfer logic
+  }
+
+  /// @dev Transfers tokens from the depositor address to the smart contract address.
+  /// @return The difference between the contract balance before and after the transferring of funds.
+  function _depositFunds(address _from, IERC20 _token, uint256 _amount) internal returns (uint256) {
+    uint256 balanceBefore = _token.balanceOf(address(this));
+    // slither-disable-next-line arbitrary-send-erc20
+    _token.safeTransferFrom(_from, address(this), _amount);
+    uint256 balanceAfter = _token.balanceOf(address(this));
+
+    return balanceAfter - balanceBefore;
+  }
+
   function claimFailedDeposit(
     uint256,
     address _depositSender,

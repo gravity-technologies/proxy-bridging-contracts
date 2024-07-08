@@ -1,4 +1,4 @@
-import { ethers } from "ethers";
+import { ContractTransactionReceipt, ContractTransactionResponse, ethers } from "ethers";
 import { TransactionResponse, TransactionReceipt } from "@ethersproject/abstract-provider";
 
 export async function generateSignature({ l1Sender, l2Receiver, l1Token, amount, deadline, wallet }: {
@@ -39,6 +39,11 @@ export async function generateSignature({ l1Sender, l2Receiver, l1Token, amount,
 }
 
 export const txConfirmation = async (txPromise: Promise<TransactionResponse>): Promise<TransactionReceipt> => {
+    const tx = await txPromise;
+    return await tx.wait();
+}
+
+export const txConfirmation2 = async (txPromise: Promise<ContractTransactionResponse>): Promise<ContractTransactionReceipt|null> => {
     const tx = await txPromise;
     return await tx.wait();
 }
