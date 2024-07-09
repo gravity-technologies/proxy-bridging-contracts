@@ -93,7 +93,7 @@ contract GRVTBridgeProxy is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     _transferOwnership(_owner);
 
     __ReentrancyGuard_init();
-    
+
     emit Initialized(_chainID, _bridgeHub, _owner, _depositApprover, _baseToken);
   }
 
@@ -148,15 +148,13 @@ contract GRVTBridgeProxy is OwnableUpgradeable, ReentrancyGuardUpgradeable {
   // TODO: add NatSpec
   // TODO: review gas limit
   // TODO: add tests
-  function mintBaseTokenL2(
-    address _l2Receiver, 
-    uint256 _amount
-  ) external onlyOwner {
+  function mintBaseTokenL2(address _l2Receiver, uint256 _amount) external onlyOwner {
     uint256 baseCost = l2TransactionBaseCost(L2_GAS_LIMIT_MINT_BASE_TOKEN);
     uint256 mintValue = baseCost + _amount;
 
     baseToken.mint(address(this), mintValue);
-    bridgeHub.requestL2TransactionDirect(L2TransactionRequestDirect({
+    bridgeHub.requestL2TransactionDirect(
+      L2TransactionRequestDirect({
         chainId: chainID,
         mintValue: mintValue,
         l2Contract: _l2Receiver,
@@ -166,7 +164,8 @@ contract GRVTBridgeProxy is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         l2GasPerPubdataByteLimit: REQUIRED_L2_GAS_PRICE_PER_PUBDATA,
         factoryDeps: new bytes[](0),
         refundRecipient: address(_l2Receiver)
-    }));
+      })
+    );
   }
 
   /**
@@ -242,9 +241,7 @@ contract GRVTBridgeProxy is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     emit BridgeProxyDepositInitiated(txDataHash, txHash, _l1Sender, _l2Receiver, _l1Token, _amount);
   }
 
-  function l2TransactionBaseCost(
-    uint256 _l2GasLimit
-  ) private view returns (uint256) {
+  function l2TransactionBaseCost(uint256 _l2GasLimit) private view returns (uint256) {
     return bridgeHub.l2TransactionBaseCost(chainID, tx.gasprice, _l2GasLimit, REQUIRED_L2_GAS_PRICE_PER_PUBDATA);
   }
 
