@@ -11,28 +11,29 @@ const CHAIN_ID = 666
 const TEST_AMOUNT = 100
 
 describe("GRVTBridgeProxy", function () {
-  describe("mintBaseTokenL2", function() {
+  describe("mintBaseTokenL2", function () {
     it("Should mint the amount to l2 receiver", async function () {
-      const { grvtBridgeProxy, grvtBaseToken, owner, mockL1SharedBridge} =
-        await deployGRVTBridgeProxyFixture({l2TransactionBaseCost: TEST_AMOUNT})
+      const { grvtBridgeProxy, grvtBaseToken, owner, mockL1SharedBridge } = await deployGRVTBridgeProxyFixture({
+        l2TransactionBaseCost: TEST_AMOUNT,
+      })
 
       await expect(grvtBridgeProxy.mintBaseTokenL2(owner.address, TEST_AMOUNT)).to.be.fulfilled
-      
+
       expect(await grvtBaseToken.totalSupply()).to.equal(2 * TEST_AMOUNT)
       expect(await grvtBaseToken.balanceOf(mockL1SharedBridge.target)).to.equal(2 * TEST_AMOUNT)
     })
 
     it("Should not mint the amount to l2 receiver if caller is not owner", async function () {
-      const { grvtBridgeProxy, rando} =
-        await deployGRVTBridgeProxyFixture({l2TransactionBaseCost: TEST_AMOUNT})
+      const { grvtBridgeProxy, rando } = await deployGRVTBridgeProxyFixture({ l2TransactionBaseCost: TEST_AMOUNT })
 
       const proxyAsRando = grvtBridgeProxy.connect(rando) as ethers.Contract
 
-      await expect(proxyAsRando.mintBaseTokenL2(rando.address, TEST_AMOUNT))
-            .to.be.revertedWith("Ownable: caller is not the owner")
+      await expect(proxyAsRando.mintBaseTokenL2(rando.address, TEST_AMOUNT)).to.be.revertedWith(
+        "Ownable: caller is not the owner"
+      )
     })
   })
-  
+
   describe("Deployment", function () {
     it("Should set the right initial values", async function () {
       const { grvtBridgeProxy, grvtBaseToken, owner, mockL1SharedBridge, mockBridgeHub, depositApprover } =
@@ -48,8 +49,8 @@ describe("GRVTBridgeProxy", function () {
 
   describe("Deposit", function () {
     it("Should accept a deposit with valid signature", async function () {
-      const { grvtBridgeProxy, grvtBaseToken, owner, depositApprover, usdt, mockL1SharedBridge } = 
-      await deployGRVTBridgeProxyFixture({ l2TransactionBaseCost: TEST_AMOUNT })
+      const { grvtBridgeProxy, grvtBaseToken, owner, depositApprover, usdt, mockL1SharedBridge } =
+        await deployGRVTBridgeProxyFixture({ l2TransactionBaseCost: TEST_AMOUNT })
       await expect(testDeposit(grvtBridgeProxy, owner, depositApprover, usdt, {})).to.be.fulfilled
 
       expect(await usdt.balanceOf(owner.address)).to.equal(0)
@@ -530,9 +531,7 @@ async function deployGRVTBridgeProxyFixture({
   const [owner, rando, depositApprover, l2Bridge] = await hre.ethers.getSigners()
 
   const grvtBaseTokenImplFactory = await hre.ethers.getContractFactory("GRVTBaseToken")
-  const grvtBaseTokenFactory = await hre.upgrades.deployProxy(grvtBaseTokenImplFactory, [
-    owner.address,
-  ])
+  const grvtBaseTokenFactory = await hre.upgrades.deployProxy(grvtBaseTokenImplFactory, [owner.address])
 
   const grvtBaseToken = await grvtBaseTokenFactory.waitForDeployment()
 
@@ -545,8 +544,10 @@ async function deployGRVTBridgeProxyFixture({
   const mockBridgeHubFactory = await hre.ethers.getContractFactory("MockBridgeHub")
   const mockBridgeHub = await mockBridgeHubFactory.deploy(
     mockL1SharedBridge.target,
-    grvtBaseToken.target, txProofResult,
-    l2TransactionBaseCost)
+    grvtBaseToken.target,
+    txProofResult,
+    l2TransactionBaseCost
+  )
 
   const grvtBridgeProxyImplFactory = await hre.ethers.getContractFactory("GRVTBridgeProxy")
   const grvtBridgeProxyFactory = await hre.upgrades.deployProxy(grvtBridgeProxyImplFactory, [
@@ -554,11 +555,11 @@ async function deployGRVTBridgeProxyFixture({
     mockBridgeHub.target,
     owner.address,
     depositApprover.address,
-    grvtBaseToken.target
+    grvtBaseToken.target,
   ])
   const grvtBridgeProxy = await grvtBridgeProxyFactory.waitForDeployment()
 
-  await grvtBaseToken.grantRole(await grvtBaseToken.MINTER_ROLE(), grvtBridgeProxy.target);
+  await grvtBaseToken.grantRole(await grvtBaseToken.MINTER_ROLE(), grvtBridgeProxy.target)
   await grvtBridgeProxy.approveBaseToken(mockL1SharedBridge.target, ethers.MaxUint256)
 
   return {

@@ -54,8 +54,7 @@ describe("GRVTTransactionFilterer", function () {
     })
 
     it("Should allow a send tx with non-zero L2 value", async function () {
-      const { grvtTransactionFilterer, rando, l1SharedBridgeAddress } =
-        await deployGRVTTransactionFiltererFixture()
+      const { grvtTransactionFilterer, rando, l1SharedBridgeAddress } = await deployGRVTTransactionFiltererFixture()
       expect(
         await grvtTransactionFilterer.isTransactionAllowed(
           l1SharedBridgeAddress,
@@ -69,8 +68,7 @@ describe("GRVTTransactionFilterer", function () {
     })
 
     it("Should reject a send tx with zero L2 value", async function () {
-      const { grvtTransactionFilterer, rando, l1SharedBridgeAddress } =
-        await deployGRVTTransactionFiltererFixture()
+      const { grvtTransactionFilterer, rando, l1SharedBridgeAddress } = await deployGRVTTransactionFiltererFixture()
       expect(
         await grvtTransactionFilterer.isTransactionAllowed(
           l1SharedBridgeAddress,

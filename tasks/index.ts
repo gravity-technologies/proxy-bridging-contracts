@@ -65,7 +65,6 @@ task("base-token", "Get base token of chain")
 
     const bh = new hre.ethers.Contract(bridgeHub, bhAbi, operator)
     console.log(await (await bh.baseToken(chainId)).wait())
-
   })
 
 task("bridge-erc20", "Bridge ERC20 tokens")
@@ -107,7 +106,7 @@ task("bridge-erc20", "Bridge ERC20 tokens")
     )
   })
 
-  task("mint-base-l2", "Bridge base tokens")
+task("mint-base-l2", "Bridge base tokens")
   .addParam("amount", "The amount to bridge", "10000000000000000000000")
   .addParam("bridgeProxyAddress", "The address of the bridge proxy")
   .setAction(async (taskArgs, hre) => {
@@ -116,13 +115,7 @@ task("bridge-erc20", "Bridge ERC20 tokens")
 
     const bridgeProxy = await hre.ethers.getContractAt("GRVTBridgeProxy", bridgeProxyAddress)
 
-    const tx = await (
-      await bridgeProxy.mintBaseTokenL2(operator.address, amount)
-    ).wait()
+    const tx = await (await bridgeProxy.mintBaseTokenL2(operator.address, amount)).wait()
 
-    console.log(
-      "Bridge transaction: ",
-      tx
-    )
+    console.log("Bridge transaction: ", tx)
   })
-
