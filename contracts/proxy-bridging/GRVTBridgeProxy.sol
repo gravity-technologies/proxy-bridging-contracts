@@ -48,8 +48,8 @@ contract GRVTBridgeProxy is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     bool sharedBridgeClaimSucceeded
   );
 
-  uint256 public constant L2_GAS_LIMIT_DEPOSIT = 683830;
-  uint256 public constant L2_GAS_LIMIT_MINT_BASE_TOKEN = 625236;
+  uint256 public constant L2_GAS_LIMIT_DEPOSIT = 1200000;
+  uint256 public constant L2_GAS_LIMIT_MINT_BASE_TOKEN = 500000;
 
   uint256 public chainID;
   IBridgehub public bridgeHub;
