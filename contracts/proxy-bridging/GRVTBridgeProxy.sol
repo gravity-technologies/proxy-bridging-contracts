@@ -212,7 +212,7 @@ contract GRVTBridgeProxy is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     address sharedBridge = address(bridgeHub.sharedBridge());
 
     IERC20(_l1Token).safeTransferFrom(_l1Sender, address(this), _amount);
-    require(IERC20(_l1Token).approve(address(sharedBridge), _amount), "grvtBP: approve failed");
+    IERC20(_l1Token).safeIncreaseAllowance(address(sharedBridge), _amount);
 
     uint256 baseCost = l2TransactionBaseCost(L2_GAS_LIMIT_DEPOSIT);
     baseToken.mint(address(this), baseCost);
