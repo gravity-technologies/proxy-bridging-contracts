@@ -1,0 +1,39 @@
+name: test
+
+on:
+  pull_request:
+
+jobs:
+  hardhat:
+    strategy:
+      matrix:
+          module: 
+            - "./contracts"
+      fail-fast: true
+
+    name: Hardhat project
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v3
+        with:
+          node-version: "20.x"
+          cache: "yarn"
+
+      - name: Install Node dependencies
+        run: |
+          yarn install
+      
+      - name: Run prettier
+        run: |
+          yarn prettier:check
+        id: prettier
+
+      - name: Run tests
+        run: |
+          yarn test
+        id: tests
