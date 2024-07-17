@@ -7,7 +7,7 @@ import GRVTBridgeProxy from "./GRVTBridgeProxy";
 import GRVTTransactionFilterer from "./GRVTTransactionFilterer";
 
 // This module can only be used by the base token admin
-const DevProxySetup = buildModule("DevProxySetup", (m) => {
+const ProxySetup = buildModule("ProxySetup", (m) => {
     const { baseToken: baseTokenProxy } = m.useModule(GRVTBaseToken);
     const { bridgeProxy: bridgeProxyProxy } = m.useModule(GRVTBridgeProxy);
     const { txFilterer: txFiltererProxy } = m.useModule(GRVTTransactionFilterer);
@@ -15,20 +15,29 @@ const DevProxySetup = buildModule("DevProxySetup", (m) => {
     const baseToken = m.contractAt("GRVTBaseToken", baseTokenProxy);
     const bridgeProxy = m.contractAt("GRVTBridgeProxy", bridgeProxyProxy);
     const txFilterer = m.contractAt("GRVTTransactionFilterer", txFiltererProxy);
+    const governanceAddress = m.getParameter("governanceAddress");
+
+
+    const mintAmount = BigInt("0x0000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
+
+    const mint = m.call(baseToken, "mint", [
+        governanceAddress,
+        mintAmount
+    ]);
 
     // Grant the minter role to the bridge proxy
-    m.call(baseToken, "grantRole", [
+    const grantRole = m.call(baseToken, "grantRole", [
         ethers.keccak256(ethers.toUtf8Bytes("MINTER_ROLE")),
         bridgeProxy
-    ]);
+    ], {after: [mint]});
     
     m.call(bridgeProxy, "approveBaseToken", [
         m.staticCall(txFilterer, "l1SharedBridge", []),
         ethers.MaxUint256
-    ]);
+    ], {after: [grantRole]});
 
 
     return { bridgeProxy, baseToken, txFilterer };
 });
 
-export default DevProxySetup;
+export default ProxySetup;
