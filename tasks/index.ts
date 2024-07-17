@@ -2,46 +2,6 @@ import { task } from "hardhat/config"
 
 import { txConfirmation, txConfirmation2, generateSignature } from "../utils"
 
-// import { IGovernance__factory } from "../typechain-types/factories/contracts/interfaces/IGovernance__factory";
-
-// task("set-transaction-filterer", "Register the transaction filterer")
-//   .addParam("diamondProxyAddress", "The address of the diamond proxy")
-//   .addParam("txFiltererAddress", "The address of the transaction filterer")
-//   .addParam("governanceAddress", "The address of the governance contract")
-//   .setAction(async (taskArgs, hre) => {
-//     const { diamondProxyAddress, txFiltererAddress, governanceAddress } = taskArgs;
-
-//     const [operator] = await hre.ethers.getSigners();
-
-//     const hyperchainAbi = [
-//       "function setTransactionFilterer(address _transactionFilterer) external"
-//     ];
-
-//     // Set transaction filterer on the hyperchain
-//     const iface = new hre.ethers.Interface(hyperchainAbi);
-//     const calldata = iface.encodeFunctionData(
-//       "setTransactionFilterer", [txFiltererAddress]
-//     );
-
-//     const gov = IGovernance__factory.connect(governanceAddress, operator);
-//     const operation = {
-//       calls: [{ target: diamondProxyAddress, value: 0, data: calldata }],
-//       predecessor: hre.ethers.ZeroHash,
-//       salt: hre.ethers.hexlify(hre.ethers.randomBytes(32)),
-//     };
-
-//     const scheduleTx = await gov.scheduleTransparent(operation, 0);
-//     await scheduleTx.wait();
-//     console.log("Upgrade scheduled");
-
-//     const executeTX = await gov.execute(operation, { value: 0 });
-//     await executeTX.wait();
-//     console.log(
-//       "Upgrade with target: ",
-//       diamondProxyAddress
-//     );
-//   });
-
 task("grant-base-token-minter-role", "Grant the minter role to an address")
   .addParam("baseToken", "The address of the baseToken")
   .addParam("to", "The address to grant the minter role to")
