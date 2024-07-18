@@ -40,7 +40,6 @@
     "prettier:sol": "prettier --write --plugin=prettier-plugin-solidity contracts/**/*.sol",
     "prettier": "prettier --write ./**/*.ts",
     "compile": "hardhat compile",
-    "test": "hardhat test",
-    "deploy": "hardhat ignition deploy ignition/modules/GRVTTransactionFilterer.ts"
+    "test": "hardhat test"
   }
 }

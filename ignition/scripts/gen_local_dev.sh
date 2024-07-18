@@ -19,12 +19,6 @@ json_content=$(cat <<EOF
         "upgradableProxyAdminOwnerAddress": "0xF8A3188d179133204bFE984d5275D926D140953b",
         "depositApproverAddress": "0x52312AD6f01657413b2eaE9287f6B9ADaD93D5FE"
     },
-    "GRVTTransactionFilterer": {
-        "l1SharedBridge": "$CONTRACTS_L1_SHARED_BRIDGE_PROXY_ADDR",
-        "l2Bridge": "$CONTRACTS_L2_SHARED_BRIDGE_ADDR",
-        "ownerAddress": "0x52312AD6f01657413b2eaE9287f6B9ADaD93D5FE",
-        "upgradableProxyAdminOwnerAddress": "0xF8A3188d179133204bFE984d5275D926D140953b"
-    },
     "GRVTBaseToken": {
         "defaultAdmin": "0x52312AD6f01657413b2eaE9287f6B9ADaD93D5FE",
         "upgradableProxyAdminOwnerAddress": "0xF8A3188d179133204bFE984d5275D926D140953b",
@@ -32,6 +26,7 @@ json_content=$(cat <<EOF
         "l1SharedBridge": "$CONTRACTS_L1_SHARED_BRIDGE_PROXY_ADDR"
     },
     "ProxySetup": {
+        "l1SharedBridge": "$CONTRACTS_L1_SHARED_BRIDGE_PROXY_ADDR",
         "governanceAddress": "$CONTRACTS_GOVERNANCE_ADDR"
     }
 }
