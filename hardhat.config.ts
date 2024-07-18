@@ -17,6 +17,10 @@ const config: HardhatUserConfig = {
         "0x3eb15da85647edd9a1159a4a13b9e7c56877c4eb33f614546d4db06a51868b1c" // deployer
       ]
     },
+    grvtDev: {
+      url: "https://eth.zkdev.gravitymarkets.io",
+      accounts: [],
+    },
     sepolia: {
       url: `https://eth-sepolia.g.alchemy.com/v2/${process.env.ALCHEMY_API_KEY}`,
       accounts: [],
