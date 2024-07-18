@@ -20,8 +20,6 @@ import {GRVTBaseToken} from "./GRVTBaseToken.sol";
  * @dev This contract wraps around the `requestL2TransactionTwoBridges` function of the `BridgeHub`
  * and the `claimFailedDeposit` function of the `L1SharedBridge`. It ensures that only deposit requests
  * with valid approval signatures from GRVT can be initiated.
- * `GRVTTransactionFilterer`, which is registered with the Mailbox, ensures that only L1 -> L2 requests
- * initiated by this proxy are processed.
  */
 contract GRVTBridgeProxy is OwnableUpgradeable, ReentrancyGuardUpgradeable {
   using SafeERC20 for IERC20;
