@@ -28,18 +28,20 @@ task("base-token", "Get base token of chain")
   })
 
 task("bridge-erc20", "Bridge ERC20 tokens")
-  .addParam("token", "The token address", "0x70a0F165d6f8054d0d0CF8dFd4DD2005f0AF6B55")
-  .addParam("amount", "The amount to bridge", "1000000000000000000000000000")
-  .addParam("deadline", "The deposit deadline", "2000000000")
+  .addParam("token", "The token address", "0x8eaf260e3F33Af5eb3B395eBEa2dAaC9487E95ba")
+  .addParam("amount", "The amount to bridge", "50000000")
+  .addParam("deadline", "The deposit deadline", "2000000001")
   .addParam("bridgeProxyAddress", "The address of the bridge proxy")
+  .addParam("approverPrivateKey", "The private key of the approver")
   .setAction(async (taskArgs, hre) => {
-    const { token, amount, bridgeProxyAddress, deadline } = taskArgs
+    const { token, amount, bridgeProxyAddress, deadline, approverPrivateKey } = taskArgs
     const [operator] = await hre.ethers.getSigners()
 
-    const tokenAbi = ["function approve(address spender, uint256 amount) external returns (bool)"]
+    const tokenAbi = ["function approve(address _spender, uint _value) public"]
 
     const tokenContract = new hre.ethers.Contract(token, tokenAbi, operator)
 
+    await txConfirmation(tokenContract.approve(bridgeProxyAddress, 0))
     await txConfirmation(tokenContract.approve(bridgeProxyAddress, amount))
     console.log(`GRVTBridgeProxy approved to spend ${amount} tokens at ${token}: `)
 
@@ -53,7 +55,7 @@ task("bridge-erc20", "Bridge ERC20 tokens")
       l1Token: token,
       amount: amount,
       deadline: deadline,
-      wallet: operator,
+      wallet: new hre.ethers.Wallet(approverPrivateKey),
     })
 
     console.log(
