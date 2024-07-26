@@ -28,9 +28,9 @@ task("base-token", "Get base token of chain")
   })
 
 task("bridge-erc20", "Bridge ERC20 tokens")
-  .addParam("token", "The token address", "0x8eaf260e3F33Af5eb3B395eBEa2dAaC9487E95ba")
+  .addParam("token", "The token address", "0xD9Af0306B61cc6736c1599160f2F645ad600451B")
   .addParam("amount", "The amount to bridge", "50000000")
-  .addParam("deadline", "The deposit deadline", "2000000001")
+  .addParam("deadline", "The deposit deadline", "20000000124")
   .addParam("bridgeProxyAddress", "The address of the bridge proxy")
   .addParam("approverPrivateKey", "The private key of the approver")
   .setAction(async (taskArgs, hre) => {
@@ -56,6 +56,7 @@ task("bridge-erc20", "Bridge ERC20 tokens")
       amount: amount,
       deadline: deadline,
       wallet: new hre.ethers.Wallet(approverPrivateKey),
+      chainId: (await hre.ethers.provider.getNetwork()).chainId,
     })
 
     console.log(

@@ -331,7 +331,7 @@ contract GRVTBridgeProxy is OwnableUpgradeable, ReentrancyGuardUpgradeable {
 
     bytes32 msgHash = keccak256(
       abi.encodePacked(
-        PREFIXED_DOMAIN_SEPARATOR,
+        abi.encodePacked("\x19\x01", DOMAIN_SEPARATOR),
         keccak256(abi.encode(DEPOSIT_APPROVAL_TYPEHASH, _l1Sender, _l2Receiver, _l1Token, _amount, _deadline))
       )
     );
@@ -347,9 +347,12 @@ contract GRVTBridgeProxy is OwnableUpgradeable, ReentrancyGuardUpgradeable {
   }
 
   bytes32 private constant eip712DomainTypeHash = keccak256("EIP712Domain(string name,string version,uint256 chainId)");
-  bytes32 private constant DOMAIN_SEPARATOR =
-    keccak256(abi.encode(eip712DomainTypeHash, keccak256(bytes("GRVT Exchange")), keccak256(bytes("0")), 1));
-  bytes private constant PREFIXED_DOMAIN_SEPARATOR = abi.encodePacked("\x19\x01", DOMAIN_SEPARATOR);
+
+  /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
+  bytes32 private immutable DOMAIN_SEPARATOR =
+    keccak256(
+      abi.encode(eip712DomainTypeHash, keccak256(bytes("GRVT Exchange")), keccak256(bytes("0")), block.chainid)
+    );
 
   bytes32 private constant DEPOSIT_APPROVAL_TYPEHASH =
     keccak256("DepositApproval(address l1Sender,address l2Receiver,address l1Token,uint256 amount,uint256 deadline)");
