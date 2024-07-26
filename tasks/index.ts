@@ -56,7 +56,7 @@ task("bridge-erc20", "Bridge ERC20 tokens")
       amount: amount,
       deadline: deadline,
       wallet: new hre.ethers.Wallet(approverPrivateKey),
-      chainId: (await hre.ethers.provider.getNetwork()).chainId
+      chainId: (await hre.ethers.provider.getNetwork()).chainId,
     })
 
     console.log(

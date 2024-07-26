@@ -12,7 +12,6 @@ const TEST_AMOUNT = 100
 
 describe("GRVTBridgeProxy", function () {
   describe("mintBaseTokenL2", function () {
-
     it("Should mint the amount to l2 receiver", async function () {
       CHAIN_ID = (await hre.ethers.provider.getNetwork()).chainId
 
