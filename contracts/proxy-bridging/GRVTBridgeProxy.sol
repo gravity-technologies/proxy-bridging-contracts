@@ -350,7 +350,9 @@ contract GRVTBridgeProxy is OwnableUpgradeable, ReentrancyGuardUpgradeable {
 
   /// @custom:oz-upgrades-unsafe-allow state-variable-immutable
   bytes32 private immutable DOMAIN_SEPARATOR =
-    keccak256(abi.encode(eip712DomainTypeHash, keccak256(bytes("GRVT Exchange")), keccak256(bytes("0")), block.chainid));
+    keccak256(
+      abi.encode(eip712DomainTypeHash, keccak256(bytes("GRVT Exchange")), keccak256(bytes("0")), block.chainid)
+    );
 
   bytes32 private constant DEPOSIT_APPROVAL_TYPEHASH =
     keccak256("DepositApproval(address l1Sender,address l2Receiver,address l1Token,uint256 amount,uint256 deadline)");
