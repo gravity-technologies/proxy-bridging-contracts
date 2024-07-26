@@ -1,18 +1,19 @@
 import { ContractTransactionReceipt, ContractTransactionResponse, ethers } from "ethers";
 import { TransactionResponse, TransactionReceipt } from "@ethersproject/abstract-provider";
 
-export async function generateSignature({ l1Sender, l2Receiver, l1Token, amount, deadline, wallet }: {
+export async function generateSignature({ l1Sender, l2Receiver, l1Token, amount, deadline, wallet, chainId }: {
     l1Sender: string;
     l2Receiver: string;
     l1Token: string;
     amount: number;
     deadline: number;
     wallet: ethers.Signer;
+    chainId: bigint;
 }) {
     const domain = {
         name: "GRVT Exchange",
         version: "0",
-        chainId: 1, // Change this based on your network
+        chainId: chainId,
     };
 
     const types = {
