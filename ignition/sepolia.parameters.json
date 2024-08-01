@@ -1,19 +1,19 @@
 {
     "GRVTBaseToken": {
-        "defaultAdmin": "0x883aF3F53f2e27bbC139D54eAFf1b328c3A3059F",
-        "upgradableProxyAdminOwnerAddress": "0x2e0C121c49F86f870354b2c7b13584f1D6EcbF43",
-        "operator": "0x883aF3F53f2e27bbC139D54eAFf1b328c3A3059F",
+        "defaultAdmin": "0x2d82f718Bba4431CD334861b170e114119f2e8D0",
+        "upgradableProxyAdminOwnerAddress": "0x86e96B330B9987Ab2a0900A277B234828214903f",
+        "operator": "0x2d82f718Bba4431CD334861b170e114119f2e8D0",
         "l1SharedBridge": "0x3E8b2fe58675126ed30d0d12dea2A9bda72D18Ae"
     },
     "GRVTBridgeProxy": {
         "l2ChainID": 326,
         "bridgeHubAddress": "0x35A54c8C757806eB6820629bc82d90E056394C92",
-        "ownerAddress": "0x883aF3F53f2e27bbC139D54eAFf1b328c3A3059F",
-        "upgradableProxyAdminOwnerAddress": "0x2e0C121c49F86f870354b2c7b13584f1D6EcbF43",
+        "ownerAddress": "0x2d82f718Bba4431CD334861b170e114119f2e8D0",
+        "upgradableProxyAdminOwnerAddress": "0x86e96B330B9987Ab2a0900A277B234828214903f",
         "depositApproverAddress": "0xADD07D42BAd66D477a13f7687a402A6A5721CE2D"
     },
     "ProxySetup": {
         "l1SharedBridge": "0x3E8b2fe58675126ed30d0d12dea2A9bda72D18Ae",
-        "governanceAddress": ""
+        "governanceAddress": "0x35808566EbCa39C62CEa3C0495479df5Fa351D4a"
     }
 }
