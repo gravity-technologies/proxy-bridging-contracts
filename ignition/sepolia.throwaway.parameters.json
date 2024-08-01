@@ -1,0 +1,19 @@
+{
+    "GRVTBaseToken": {
+        "defaultAdmin": "0x2d82f718Bba4431CD334861b170e114119f2e8D0",
+        "upgradableProxyAdminOwnerAddress": "0x86e96B330B9987Ab2a0900A277B234828214903f",
+        "operator": "0x2d82f718Bba4431CD334861b170e114119f2e8D0",
+        "l1SharedBridge": "0x3E8b2fe58675126ed30d0d12dea2A9bda72D18Ae"
+    },
+    "GRVTBridgeProxy": {
+        "l2ChainID": 327,
+        "bridgeHubAddress": "0x35A54c8C757806eB6820629bc82d90E056394C92",
+        "ownerAddress": "0x2d82f718Bba4431CD334861b170e114119f2e8D0",
+        "upgradableProxyAdminOwnerAddress": "0x86e96B330B9987Ab2a0900A277B234828214903f",
+        "depositApproverAddress": "0x9Ba4fEF85D70F8fA821223Ba58D5606F55081c28"
+    },
+    "ProxySetup": {
+        "l1SharedBridge": "0x3E8b2fe58675126ed30d0d12dea2A9bda72D18Ae",
+        "governanceAddress": "0x35808566EbCa39C62CEa3C0495479df5Fa351D4a"
+    }
+}
