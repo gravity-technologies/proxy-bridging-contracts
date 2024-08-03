@@ -28,22 +28,27 @@ task("base-token", "Get base token of chain")
   })
 
 task("bridge-erc20", "Bridge ERC20 tokens")
-  .addParam("token", "The token address", "0xD9Af0306B61cc6736c1599160f2F645ad600451B")
-  .addParam("amount", "The amount to bridge", "50000000")
+  .addParam("token", "The token address", "0xf7CF188E93fed132475A24c8a22EAAd7785232e8")
+  .addParam("amount", "The amount to bridge", "100000000000")
   .addParam("deadline", "The deposit deadline", "20000000124")
   .addParam("bridgeProxyAddress", "The address of the bridge proxy")
   .addParam("approverPrivateKey", "The private key of the approver")
+  .addOptionalParam("to", "The address of the L2 receiver")
+  .addOptionalParam("skipApprove", "Skip approve")
   .setAction(async (taskArgs, hre) => {
-    const { token, amount, bridgeProxyAddress, deadline, approverPrivateKey } = taskArgs
+    const { token, amount, bridgeProxyAddress, deadline, approverPrivateKey, to, skipApprove } = taskArgs
     const [operator] = await hre.ethers.getSigners()
 
     const tokenAbi = ["function approve(address _spender, uint _value) public"]
 
-    const tokenContract = new hre.ethers.Contract(token, tokenAbi, operator)
+    const l2Receiver = to || operator.address
 
-    await txConfirmation(tokenContract.approve(bridgeProxyAddress, 0))
-    await txConfirmation(tokenContract.approve(bridgeProxyAddress, amount))
-    console.log(`GRVTBridgeProxy approved to spend ${amount} tokens at ${token}: `)
+    if (!skipApprove) {
+      const tokenContract = new hre.ethers.Contract(token, tokenAbi, operator)
+      await txConfirmation(tokenContract.approve(bridgeProxyAddress, 0))
+      await txConfirmation(tokenContract.approve(bridgeProxyAddress, amount))
+      console.log(`GRVTBridgeProxy approved to spend ${amount} tokens at ${token}: `)
+    }
 
     const bridgeProxy = await hre.ethers.getContractAt("GRVTBridgeProxy", bridgeProxyAddress)
     await (await bridgeProxy.addAllowedToken(token)).wait()
@@ -51,7 +56,7 @@ task("bridge-erc20", "Bridge ERC20 tokens")
 
     const sig = await generateSignature({
       l1Sender: operator.address,
-      l2Receiver: operator.address,
+      l2Receiver: l2Receiver,
       l1Token: token,
       amount: amount,
       deadline: deadline,
@@ -62,7 +67,7 @@ task("bridge-erc20", "Bridge ERC20 tokens")
     console.log(
       "Bridge transaction: ",
       await (
-        await bridgeProxy.deposit(operator.address, token, amount, deadline, sig.v, sig.r, sig.s, {
+        await bridgeProxy.deposit(l2Receiver, token, amount, deadline, sig.v, sig.r, sig.s, {
           gasLimit: 2900000,
         })
       ).wait()
