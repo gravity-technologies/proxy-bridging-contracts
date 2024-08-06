@@ -30,18 +30,20 @@ task("base-token", "Get base token of chain")
 task("bridge-erc20", "Bridge ERC20 tokens")
   .addParam("token", "The token address", "0xf7CF188E93fed132475A24c8a22EAAd7785232e8")
   .addParam("amount", "The amount to bridge", "100000000000")
-  .addParam("deadline", "The deposit deadline", "20000000124")
   .addParam("bridgeProxyAddress", "The address of the bridge proxy")
+  .addParam("operatorPrivateKey", "The private key of the operator")
   .addParam("approverPrivateKey", "The private key of the approver")
+  .addOptionalParam("deadline", "The deposit deadline")
   .addOptionalParam("to", "The address of the L2 receiver")
   .addOptionalParam("skipApprove", "Skip approve")
   .setAction(async (taskArgs, hre) => {
-    const { token, amount, bridgeProxyAddress, deadline, approverPrivateKey, to, skipApprove } = taskArgs
-    const [operator] = await hre.ethers.getSigners()
+    const { token, amount, bridgeProxyAddress, deadline, approverPrivateKey, operatorPrivateKey, to, skipApprove } = taskArgs
+    const operator = new hre.ethers.Wallet(operatorPrivateKey, hre.ethers.provider);
 
     const tokenAbi = ["function approve(address _spender, uint _value) public"]
 
     const l2Receiver = to || operator.address
+    const ddl = deadline || Math.floor(Date.now() / 1000) + 3600 * 24
 
     if (!skipApprove) {
       const tokenContract = new hre.ethers.Contract(token, tokenAbi, operator)
@@ -50,7 +52,7 @@ task("bridge-erc20", "Bridge ERC20 tokens")
       console.log(`GRVTBridgeProxy approved to spend ${amount} tokens at ${token}: `)
     }
 
-    const bridgeProxy = await hre.ethers.getContractAt("GRVTBridgeProxy", bridgeProxyAddress)
+    const bridgeProxy = await hre.ethers.getContractAt("GRVTBridgeProxy", bridgeProxyAddress, operator)
     await (await bridgeProxy.addAllowedToken(token)).wait()
     console.log(`Allowed token ${token} added to GRVTBridgeProxy.`)
 
@@ -59,7 +61,7 @@ task("bridge-erc20", "Bridge ERC20 tokens")
       l2Receiver: l2Receiver,
       l1Token: token,
       amount: amount,
-      deadline: deadline,
+      deadline: ddl,
       wallet: new hre.ethers.Wallet(approverPrivateKey),
       chainId: (await hre.ethers.provider.getNetwork()).chainId,
     })
@@ -67,7 +69,7 @@ task("bridge-erc20", "Bridge ERC20 tokens")
     console.log(
       "Bridge transaction: ",
       await (
-        await bridgeProxy.deposit(l2Receiver, token, amount, deadline, sig.v, sig.r, sig.s, {
+        await bridgeProxy.deposit(l2Receiver, token, amount, ddl, sig.v, sig.r, sig.s, {
           gasLimit: 2900000,
         })
       ).wait()
