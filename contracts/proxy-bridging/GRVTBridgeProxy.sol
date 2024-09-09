@@ -237,7 +237,7 @@ contract GRVTBridgeProxy is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable 
         l2Value: 0,
         l2GasLimit: L2_GAS_LIMIT_DEPOSIT,
         l2GasPerPubdataByteLimit: l2GasPerPubdataByteLimit,
-        refundRecipient: address(_l1Sender),
+        refundRecipient: owner(), // refund base token to owner of this contract
         secondBridgeAddress: sharedBridge,
         secondBridgeValue: 0,
         secondBridgeCalldata: abi.encode(_l1Token, _amount, _l2Receiver)
