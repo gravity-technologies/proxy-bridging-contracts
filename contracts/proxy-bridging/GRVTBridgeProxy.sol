@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.20;
 
-import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import {Ownable2StepUpgradeable} from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
 import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -21,7 +21,7 @@ import {GRVTBaseToken} from "./GRVTBaseToken.sol";
  * and the `claimFailedDeposit` function of the `L1SharedBridge`. It ensures that only deposit requests
  * with valid approval signatures from GRVT can be initiated.
  */
-contract GRVTBridgeProxy is OwnableUpgradeable, ReentrancyGuardUpgradeable {
+contract GRVTBridgeProxy is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable {
   using SafeERC20 for IERC20;
 
   event Initialized(uint256 chainID, address bridgeHub, address owner, address depositApprover, address baseToken);
