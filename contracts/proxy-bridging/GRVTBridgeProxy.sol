@@ -58,6 +58,11 @@ contract GRVTBridgeProxy is OwnableUpgradeable, ReentrancyGuardUpgradeable {
   mapping(bytes32 => bool) private usedDepositHashes;
   mapping(bytes32 l2DepositTxHash => bytes32 depositDataHash) public depositHappened;
 
+  /// @custom:oz-upgrades-unsafe-allow constructor
+  constructor() {
+    _disableInitializers();
+  }
+
   /**
    * @dev Checks if a token is allowed to be deposited through this proxy.
    * @param _token The address of the token to be checked.
