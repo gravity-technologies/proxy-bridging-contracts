@@ -2,7 +2,7 @@
 pragma solidity ^0.8.20;
 
 import {Ownable2StepUpgradeable} from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
-import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/ReentrancyGuardUpgradeable.sol";
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -87,8 +87,7 @@ contract GRVTBridgeProxy is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable 
     depositApprover = _depositApprover;
     baseToken = GRVTBaseToken(_baseToken);
 
-    require(_owner != address(0), "ShB owner 0");
-    _transferOwnership(_owner);
+    __Ownable_init(_owner);
 
     __ReentrancyGuard_init();
 
@@ -340,7 +339,7 @@ contract GRVTBridgeProxy is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable 
     // the signer service to read the nonce from the contract
     require(!usedDepositHashes[msgHash], "grvtBP: deposit approval already used");
 
-    (address addr, ECDSA.RecoverError err) = ECDSA.tryRecover(msgHash, _v, _r, _s);
+    (address addr, ECDSA.RecoverError err, ) = ECDSA.tryRecover(msgHash, _v, _r, _s);
     require(err == ECDSA.RecoverError.NoError && addr == depositApprover, "grvtBP: invalid signature");
 
     usedDepositHashes[msgHash] = true;
