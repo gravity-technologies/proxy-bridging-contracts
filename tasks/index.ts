@@ -37,8 +37,9 @@ task("bridge-erc20", "Bridge ERC20 tokens")
   .addOptionalParam("to", "The address of the L2 receiver")
   .addOptionalParam("skipApprove", "Skip approve")
   .setAction(async (taskArgs, hre) => {
-    const { token, amount, bridgeProxyAddress, deadline, approverPrivateKey, operatorPrivateKey, to, skipApprove } = taskArgs
-    const operator = new hre.ethers.Wallet(operatorPrivateKey, hre.ethers.provider);
+    const { token, amount, bridgeProxyAddress, deadline, approverPrivateKey, operatorPrivateKey, to, skipApprove } =
+      taskArgs
+    const operator = new hre.ethers.Wallet(operatorPrivateKey, hre.ethers.provider)
 
     const tokenAbi = ["function approve(address _spender, uint _value) public"]
 

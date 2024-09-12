@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.20;
 
-import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import {Ownable2StepUpgradeable} from "@openzeppelin/contracts-upgradeable/access/Ownable2StepUpgradeable.sol";
 import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -21,7 +21,7 @@ import {GRVTBaseToken} from "./GRVTBaseToken.sol";
  * and the `claimFailedDeposit` function of the `L1SharedBridge`. It ensures that only deposit requests
  * with valid approval signatures from GRVT can be initiated.
  */
-contract GRVTBridgeProxy is OwnableUpgradeable, ReentrancyGuardUpgradeable {
+contract GRVTBridgeProxy is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable {
   using SafeERC20 for IERC20;
 
   event Initialized(uint256 chainID, address bridgeHub, address owner, address depositApprover, address baseToken);
@@ -58,6 +58,9 @@ contract GRVTBridgeProxy is OwnableUpgradeable, ReentrancyGuardUpgradeable {
   mapping(bytes32 => bool) private usedDepositHashes;
   mapping(bytes32 l2DepositTxHash => bytes32 depositDataHash) public depositHappened;
 
+  // This needs to be set to match REQUIRED_L2_GAS_PRICE_PER_PUBDATA at all times, otherwise the deposits will fail
+  uint256 l2GasPerPubdataByteLimit;
+
   /// @custom:oz-upgrades-unsafe-allow constructor
   constructor() {
     _disableInitializers();
@@ -91,6 +94,8 @@ contract GRVTBridgeProxy is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     bridgeHub = IBridgehub(_bridgeHub);
     depositApprover = _depositApprover;
     baseToken = GRVTBaseToken(_baseToken);
+
+    l2GasPerPubdataByteLimit = REQUIRED_L2_GAS_PRICE_PER_PUBDATA;
 
     require(_owner != address(0), "ShB owner 0");
     _transferOwnership(_owner);
@@ -148,9 +153,14 @@ contract GRVTBridgeProxy is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     emit DepositApproverSet(_depositApprover);
   }
 
-  // TODO: add NatSpec
-  // TODO: review gas limit
-  // TODO: add tests
+  /**
+   * @notice Mints base tokens on Layer 2 and initiates a direct Layer 2 transaction request.
+   * @dev This function can only be called by the contract owner. It calculates the base transaction
+   *      cost and adds the specified mint amount, mints the tokens, and initiates a transaction
+   *      on Layer 2 through the bridge hub.
+   * @param _l2Receiver The address that will receive the minted tokens on Layer 2.
+   * @param _amount The amount of tokens to mint on Layer 2.
+   */
   function mintBaseTokenL2(address _l2Receiver, uint256 _amount) external onlyOwner {
     uint256 baseCost = l2TransactionBaseCost(L2_GAS_LIMIT_MINT_BASE_TOKEN);
     uint256 mintValue = baseCost + _amount;
@@ -164,7 +174,7 @@ contract GRVTBridgeProxy is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         l2Value: _amount,
         l2Calldata: new bytes(0),
         l2GasLimit: L2_GAS_LIMIT_MINT_BASE_TOKEN,
-        l2GasPerPubdataByteLimit: REQUIRED_L2_GAS_PRICE_PER_PUBDATA,
+        l2GasPerPubdataByteLimit: l2GasPerPubdataByteLimit,
         factoryDeps: new bytes[](0),
         refundRecipient: address(_l2Receiver)
       })
@@ -226,7 +236,7 @@ contract GRVTBridgeProxy is OwnableUpgradeable, ReentrancyGuardUpgradeable {
         mintValue: baseCost,
         l2Value: 0,
         l2GasLimit: L2_GAS_LIMIT_DEPOSIT,
-        l2GasPerPubdataByteLimit: REQUIRED_L2_GAS_PRICE_PER_PUBDATA,
+        l2GasPerPubdataByteLimit: l2GasPerPubdataByteLimit,
         refundRecipient: address(_l1Sender),
         secondBridgeAddress: sharedBridge,
         secondBridgeValue: 0,
@@ -245,7 +255,7 @@ contract GRVTBridgeProxy is OwnableUpgradeable, ReentrancyGuardUpgradeable {
   }
 
   function l2TransactionBaseCost(uint256 _l2GasLimit) private view returns (uint256) {
-    return bridgeHub.l2TransactionBaseCost(chainID, tx.gasprice, _l2GasLimit, REQUIRED_L2_GAS_PRICE_PER_PUBDATA);
+    return bridgeHub.l2TransactionBaseCost(chainID, tx.gasprice, _l2GasLimit, l2GasPerPubdataByteLimit);
   }
 
   /**
@@ -349,6 +359,10 @@ contract GRVTBridgeProxy is OwnableUpgradeable, ReentrancyGuardUpgradeable {
     require(err == ECDSA.RecoverError.NoError && addr == depositApprover, "grvtBP: invalid signature");
 
     usedDepositHashes[msgHash] = true;
+  }
+
+  function setL2GasPerPubdataByteLimit(uint256 limit) external onlyOwner {
+    l2GasPerPubdataByteLimit = limit;
   }
 
   bytes32 private constant eip712DomainTypeHash = keccak256("EIP712Domain(string name,string version,uint256 chainId)");
