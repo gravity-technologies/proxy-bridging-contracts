@@ -61,6 +61,11 @@ contract GRVTBridgeProxy is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable 
   // This needs to be set to match REQUIRED_L2_GAS_PRICE_PER_PUBDATA at all times, otherwise the deposits will fail
   uint256 l2GasPerPubdataByteLimit;
 
+  /// @custom:oz-upgrades-unsafe-allow constructor
+  constructor() {
+    _disableInitializers();
+  }
+
   /**
    * @dev Checks if a token is allowed to be deposited through this proxy.
    * @param _token The address of the token to be checked.
