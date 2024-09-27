@@ -2,6 +2,66 @@ import { task } from "hardhat/config"
 
 import { txConfirmation, txConfirmation2, generateSignature } from "../utils"
 
+task("force-import", "Force import a proxy or implementation contract")
+  .addParam("address", "The address of the contract to import")
+  .addParam("contractName", "The name of the contract")
+  .setAction(async (taskArgs, hre) => {
+    const { address, contractName } = taskArgs;
+
+    const factory = await hre.ethers.getContractFactory(contractName);
+
+    try {
+      const contract = await hre.upgrades.forceImport(address, factory as any);
+      console.log(`Successfully imported ${contractName} at address ${address}`);
+      console.log("Contract instance:", contract.address);
+    } catch (error) {
+      console.error("Error during force import:", error);
+    }
+  });
+
+task("validate-upgrade", "Validate an upgrade for a proxy contract")
+  .addParam("address", "The address of the proxy contract")
+  .addParam("contractName", "The name of the new implementation contract")
+  .setAction(async (taskArgs, hre) => {
+    const { address, contractName } = taskArgs;
+
+    console.log("Validating upgrade...");
+    console.log("Proxy address:", address);
+
+    const [operator] = await hre.ethers.getSigners()
+    const factory = await hre.ethers.getContractFactory(contractName, operator);
+
+    try {
+      const newImplementationAddress = await hre.upgrades.validateUpgrade(address, factory as any);
+
+      console.log("Upgrade validated successfully.");
+    } catch (error) {
+      console.error("Error validating upgrade:", error);
+    }
+  });
+
+task("prepare-upgrade", "Prepare an upgrade for a proxy contract")
+  .addParam("address", "The address of the proxy contract")
+  .addParam("contractName", "The name of the new implementation contract")
+  .setAction(async (taskArgs, hre) => {
+    const { address, contractName } = taskArgs;
+
+    console.log("Preparing upgrade...");
+    console.log("Proxy address:", address);
+
+    const [operator] = await hre.ethers.getSigners()
+    const factory = await hre.ethers.getContractFactory(contractName, operator);
+
+    try {
+      const newImplementationAddress = await hre.upgrades.prepareUpgrade(address, factory as any);
+
+      console.log("Upgrade prepared successfully.");
+      console.log("New implementation contract address:", newImplementationAddress);
+    } catch (error) {
+      console.error("Error preparing upgrade:", error);
+    }
+  });
+
 task("grant-base-token-minter-role", "Grant the minter role to an address")
   .addParam("baseToken", "The address of the baseToken")
   .addParam("to", "The address to grant the minter role to")
