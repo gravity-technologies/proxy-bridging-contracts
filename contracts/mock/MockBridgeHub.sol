@@ -1,4 +1,3 @@
-// SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.20;
 
 import {IL1SharedBridge} from "../../lib/era-contracts/l1-contracts/contracts/bridge/interfaces/IL1SharedBridge.sol";
