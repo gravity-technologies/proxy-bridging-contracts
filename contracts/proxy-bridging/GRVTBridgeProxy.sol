@@ -33,8 +33,8 @@ contract GRVTBridgeProxy is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable 
   event BridgeProxyDepositInitiated(
     bytes32 indexed txDataHash,
     bytes32 indexed l2DepositTxHash,
-    address indexed from,
-    address to,
+    address indexed to,
+    address from,
     address l1Token,
     uint256 amount
   );
@@ -251,7 +251,7 @@ contract GRVTBridgeProxy is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable 
 
     depositHappened[txHash] = txDataHash;
 
-    emit BridgeProxyDepositInitiated(txDataHash, txHash, _l1Sender, _l2Receiver, _l1Token, _amount);
+    emit BridgeProxyDepositInitiated(txDataHash, txHash, _l2Receiver, _l1Sender, _l1Token, _amount);
   }
 
   function l2TransactionBaseCost(uint256 _l2GasLimit) private view returns (uint256) {
