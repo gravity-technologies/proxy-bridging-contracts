@@ -14,6 +14,12 @@ import {TxStatus} from "../../lib/era-contracts/l1-contracts/contracts/common/Me
 import {REQUIRED_L2_GAS_PRICE_PER_PUBDATA} from "../../lib/era-contracts/l1-contracts/contracts/common/Config.sol";
 import {GRVTBaseToken} from "./GRVTBaseToken.sol";
 
+struct L2DepositProxyAddressDerivationParams {
+  address exchangeAddress;
+  bytes32 beaconProxyBytecodeHash;
+  address depositProxyBeacon;
+}
+
 /**
  * @title GRVTBridgeProxy
  * @dev This contract wraps around the `requestL2TransactionTwoBridges` function of the `BridgeHub`
@@ -47,6 +53,7 @@ contract GRVTBridgeProxy is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable 
 
   uint256 public constant L2_GAS_LIMIT_DEPOSIT = 1200000;
   uint256 public constant L2_GAS_LIMIT_MINT_BASE_TOKEN = 500000;
+  bytes32 private constant CREATE2_PREFIX = keccak256("zksyncCreate2");
 
   uint256 public chainID;
   IBridgehub public bridgeHub;
@@ -59,6 +66,8 @@ contract GRVTBridgeProxy is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable 
 
   // This needs to be set to match REQUIRED_L2_GAS_PRICE_PER_PUBDATA at all times, otherwise the deposits will fail
   uint256 l2GasPerPubdataByteLimit;
+
+  L2DepositProxyAddressDerivationParams public l2DepositProxyAddressDerivationParams;
 
   /// @custom:oz-upgrades-unsafe-allow constructor
   constructor() {
@@ -153,6 +162,19 @@ contract GRVTBridgeProxy is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable 
   }
 
   /**
+   * @notice Sets the L2 deposit proxy address derivation parameters
+   * @dev This function is intended to be called after this contract is deployed.
+   *      The parameters are not known before the exchange contract is deployed on L2,
+   *      which requires the base token to be present on L2.
+   * @param _params The L2DepositProxyAddressDerivationParams struct containing the derivation parameters
+   */
+  function setL2DepositProxyAddressDerivationParams(
+    L2DepositProxyAddressDerivationParams memory _params
+  ) external onlyOwner {
+    l2DepositProxyAddressDerivationParams = _params;
+  }
+
+  /**
    * @notice Mints base tokens on Layer 2 and initiates a direct Layer 2 transaction request.
    * @dev This function can only be called by the contract owner. It calculates the base transaction
    *      cost and adds the specified mint amount, mints the tokens, and initiates a transaction
@@ -218,43 +240,95 @@ contract GRVTBridgeProxy is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable 
     bytes32 _s
   ) private returns (bytes32 txHash) {
     require(allowedTokens[_l1Token], "grvtBP: L1 token not allowed");
+    require(l2DepositProxyAddressDerivationParams.exchangeAddress != address(0), "grvtBP: dp deriv params ns");
 
     _verifyDepositApprovalSignature(_l1Sender, _l2Receiver, _l1Token, _amount, _deadline, _v, _r, _s);
 
-    address sharedBridge = address(bridgeHub.sharedBridge());
-
     IERC20(_l1Token).safeTransferFrom(_l1Sender, address(this), _amount);
-    IERC20(_l1Token).safeIncreaseAllowance(address(sharedBridge), _amount);
 
-    uint256 baseCost = l2TransactionBaseCost(L2_GAS_LIMIT_DEPOSIT);
-    baseToken.mint(address(this), baseCost);
-
-    txHash = bridgeHub.requestL2TransactionTwoBridges(
-      L2TransactionRequestTwoBridgesOuter({
-        chainId: chainID,
-        mintValue: baseCost,
-        l2Value: 0,
-        l2GasLimit: L2_GAS_LIMIT_DEPOSIT,
-        l2GasPerPubdataByteLimit: l2GasPerPubdataByteLimit,
-        refundRecipient: owner(), // refund base token to owner of this contract
-        secondBridgeAddress: sharedBridge,
-        secondBridgeValue: 0,
-        secondBridgeCalldata: abi.encode(_l1Token, _amount, _l2Receiver)
-      })
-    );
+    txHash = _bridgeToL2DepositProxy(_l1Token, _amount, _l2Receiver);
 
     // note that the data hash is not the same as what L1SharedBridge saves
     // (first field is the proxy caller)
     // txHash is the canonicalTxHash for L2 transction
     bytes32 txDataHash = keccak256(abi.encode(_l1Sender, _l1Token, _amount));
-
     depositHappened[txHash] = txDataHash;
 
     emit BridgeProxyDepositInitiated(txDataHash, txHash, _l2Receiver, _l1Sender, _l1Token, _amount);
   }
 
+  function _bridgeToL2DepositProxy(
+    address _l1Token,
+    uint256 _amount,
+    address _l2Receiver
+  ) private returns (bytes32 txHash) {
+    address sharedBridge = address(bridgeHub.sharedBridge());
+    IERC20(_l1Token).safeIncreaseAllowance(address(sharedBridge), _amount);
+
+    uint256 baseCost = l2TransactionBaseCost(L2_GAS_LIMIT_DEPOSIT);
+    baseToken.mint(address(this), baseCost);
+
+    // we are depositing to the deposit proxy address of the l2 receiver
+    // so that the exchange contract can retrieve the bridged funds and increase
+    // funding account balance of the l2 receiver
+    address l2DepositProxyAddress = getDepositProxyAddress(_l2Receiver);
+
+    return
+      bridgeHub.requestL2TransactionTwoBridges(
+        L2TransactionRequestTwoBridgesOuter({
+          chainId: chainID,
+          mintValue: baseCost,
+          l2Value: 0,
+          l2GasLimit: L2_GAS_LIMIT_DEPOSIT,
+          l2GasPerPubdataByteLimit: l2GasPerPubdataByteLimit,
+          refundRecipient: owner(), // refund base token to owner of this contract
+          secondBridgeAddress: sharedBridge,
+          secondBridgeValue: 0,
+          secondBridgeCalldata: abi.encode(_l1Token, _amount, l2DepositProxyAddress)
+        })
+      );
+  }
+
   function l2TransactionBaseCost(uint256 _l2GasLimit) private view returns (uint256) {
     return bridgeHub.l2TransactionBaseCost(chainID, tx.gasprice, _l2GasLimit, l2GasPerPubdataByteLimit);
+  }
+
+  function getDepositProxyAddress(address accountID) public view returns (address) {
+    bytes32 constructorInputHash = keccak256(abi.encode(l2DepositProxyAddressDerivationParams.depositProxyBeacon, ""));
+    bytes32 salt = _getCreate2Salt(accountID);
+    return
+      _computeL2Create2Address(
+        l2DepositProxyAddressDerivationParams.exchangeAddress,
+        salt,
+        l2DepositProxyAddressDerivationParams.beaconProxyBytecodeHash,
+        constructorInputHash
+      );
+  }
+
+  /// @notice Computes the create2 address for a Layer 2 contract.
+  /// @param _sender The address of the contract creator.
+  /// @param _salt The salt value to use in the create2 address computation.
+  /// @param _bytecodeHash The contract bytecode hash.
+  /// @param _constructorInputHash The keccak256 hash of the constructor input data.
+  /// @return The create2 address of the contract.
+  /// NOTE: L2 create2 derivation is different from L1 derivation!
+  function _computeL2Create2Address(
+    address _sender,
+    bytes32 _salt,
+    bytes32 _bytecodeHash,
+    bytes32 _constructorInputHash
+  ) private pure returns (address) {
+    bytes32 senderBytes = bytes32(uint256(uint160(_sender)));
+    bytes32 data = keccak256(
+      // solhint-disable-next-line func-named-parameters
+      bytes.concat(CREATE2_PREFIX, senderBytes, _salt, _bytecodeHash, _constructorInputHash)
+    );
+
+    return address(uint160(uint256(data)));
+  }
+
+  function _getCreate2Salt(address accountID) internal pure returns (bytes32 salt) {
+    salt = bytes32(uint256(uint160(accountID)));
   }
 
   /**

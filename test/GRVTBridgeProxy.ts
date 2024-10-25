@@ -46,6 +46,21 @@ describe("GRVTBridgeProxy", function () {
       expect(await grvtBridgeProxy.depositApprover()).to.equal(depositApprover.address)
       expect(await mockBridgeHub.sharedBridge()).to.equal(mockL1SharedBridge)
       expect(await grvtBaseToken.totalSupply()).to.equal(0)
+      expect(await grvtBridgeProxy.l2DepositProxyAddressDerivationParams()).to.deep.equal([
+        '0x4A38dB7321b4F3f041E14c4cd63df40FE108f162',
+        '0x0100010965f47574acde5c31b36ada1f247fa8a94744d0fbf7e107c014d2b90a',
+        '0x3B32454F03e7aD9dE1ab6E8Ec0Dee6aBfEBD7DCC'
+      ])
+    })
+  })
+
+  describe("Deposit proxy address derivation", function () {
+    it("Should derive the right address", async function () {
+      const { grvtBridgeProxy } = await deployGRVTBridgeProxyFixture({})
+      expect(await grvtBridgeProxy.getDepositProxyAddress(ethers.ZeroAddress)).to.equal(
+        // queried from L2 exchange contract
+        "0xEb1f6AEa4479c7fFBE26F49B8aa05F174Fe461BA"
+      )
     })
   })
 
@@ -565,6 +580,11 @@ async function deployGRVTBridgeProxyFixture({
 
   await grvtBaseToken.grantRole(await grvtBaseToken.MINTER_ROLE(), grvtBridgeProxy.target)
   await grvtBridgeProxy.approveBaseToken(mockL1SharedBridge.target, ethers.MaxUint256)
+  await grvtBridgeProxy.setL2DepositProxyAddressDerivationParams({
+    exchangeAddress: "0x4a38db7321b4f3f041e14c4cd63df40fe108f162",
+    beaconProxyBytecodeHash: "0x0100010965f47574acde5c31b36ada1f247fa8a94744d0fbf7e107c014d2b90a",
+    depositProxyBeacon: "0x3B32454F03e7aD9dE1ab6E8Ec0Dee6aBfEBD7DCC",
+  })
 
   return {
     grvtBridgeProxy,
