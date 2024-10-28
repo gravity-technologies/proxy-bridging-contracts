@@ -239,8 +239,8 @@ contract GRVTBridgeProxy is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable 
     bytes32 _r,
     bytes32 _s
   ) private returns (bytes32 txHash) {
-    require(allowedTokens[_l1Token], "grvtBP: L1 token not allowed");
-    require(l2DepositProxyAddressDerivationParams.exchangeAddress != address(0), "grvtBP: dp deriv params ns");
+    require(allowedTokens[_l1Token], "L1 token not allowed");
+    require(l2DepositProxyAddressDerivationParams.exchangeAddress != address(0), "dp deriv params ns");
 
     _verifyDepositApprovalSignature(_l1Sender, _l2Receiver, _l1Token, _amount, _deadline, _v, _r, _s);
 
@@ -362,15 +362,15 @@ contract GRVTBridgeProxy is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable 
         _merkleProof: _merkleProof,
         _status: TxStatus.Failure
       });
-      require(proofValid, "grvtBP: invalid proof");
+      require(proofValid, "invalid proof");
     }
-    require(_amount > 0, "grvtBP: amount must be larger than 0");
+    require(_amount > 0, "amount must be larger than 0");
 
     // no legacy bridge check as that is not applicable for our chain
     bytes32 dataHash = depositHappened[_l2TxHash];
     bytes32 txDataHash = keccak256(abi.encode(_depositSender, _l1Token, _amount));
 
-    require(dataHash == txDataHash, "grvtBP: deposit did not happen");
+    require(dataHash == txDataHash, "deposit did not happen");
     delete depositHappened[_l2TxHash];
 
     IL1SharedBridge sharedBridge = bridgeHub.sharedBridge();
@@ -415,7 +415,7 @@ contract GRVTBridgeProxy is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable 
     bytes32 _r,
     bytes32 _s
   ) internal {
-    require(block.timestamp <= _deadline, "grvtBP: expired deadline");
+    require(block.timestamp <= _deadline, "expired deadline");
 
     bytes32 msgHash = keccak256(
       abi.encodePacked(
@@ -426,10 +426,10 @@ contract GRVTBridgeProxy is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable 
 
     // TODO: we can consider using nouce here, this imposes a limit of 1 tx per second, but requires
     // the signer service to read the nonce from the contract
-    require(!usedDepositHashes[msgHash], "grvtBP: deposit approval already used");
+    require(!usedDepositHashes[msgHash], "deposit approval already used");
 
     (address addr, ECDSA.RecoverError err) = ECDSA.tryRecover(msgHash, _v, _r, _s);
-    require(err == ECDSA.RecoverError.NoError && addr == depositApprover, "grvtBP: invalid signature");
+    require(err == ECDSA.RecoverError.NoError && addr == depositApprover, "invalid signature");
 
     usedDepositHashes[msgHash] = true;
   }
