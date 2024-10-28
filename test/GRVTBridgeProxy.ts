@@ -46,6 +46,21 @@ describe("GRVTBridgeProxy", function () {
       expect(await grvtBridgeProxy.depositApprover()).to.equal(depositApprover.address)
       expect(await mockBridgeHub.sharedBridge()).to.equal(mockL1SharedBridge)
       expect(await grvtBaseToken.totalSupply()).to.equal(0)
+      expect(await grvtBridgeProxy.l2DepositProxyAddressDerivationParams()).to.deep.equal([
+        '0x4A38dB7321b4F3f041E14c4cd63df40FE108f162',
+        '0x0100010965f47574acde5c31b36ada1f247fa8a94744d0fbf7e107c014d2b90a',
+        '0x3B32454F03e7aD9dE1ab6E8Ec0Dee6aBfEBD7DCC'
+      ])
+    })
+  })
+
+  describe("Deposit proxy address derivation", function () {
+    it("Should derive the right address", async function () {
+      const { grvtBridgeProxy } = await deployGRVTBridgeProxyFixture({})
+      expect(await grvtBridgeProxy.getDepositProxyAddress(ethers.ZeroAddress)).to.equal(
+        // queried from L2 exchange contract
+        "0xEb1f6AEa4479c7fFBE26F49B8aa05F174Fe461BA"
+      )
     })
   })
 
@@ -84,7 +99,7 @@ describe("GRVTBridgeProxy", function () {
         testDeposit(grvtBridgeProxy, owner, depositApprover, usdt, {
           deadline: Math.floor(Date.now() / 1000) - 30,
         })
-      ).to.be.revertedWith("grvtBP: expired deadline")
+      ).to.be.revertedWith("expired deadline")
     })
 
     it("Should reject a deposit with an invalid signature", async function () {
@@ -93,7 +108,7 @@ describe("GRVTBridgeProxy", function () {
         testDeposit(grvtBridgeProxy, owner, depositApprover, usdt, {
           tamperSiguatureFn: ({ v, r, s }) => ({ v: v + 1, r, s }),
         })
-      ).to.be.revertedWith("grvtBP: invalid signature")
+      ).to.be.revertedWith("invalid signature")
     })
 
     it("Should reject a deposit with different l1Sender in signature and tx", async function () {
@@ -102,7 +117,7 @@ describe("GRVTBridgeProxy", function () {
         testDeposit(grvtBridgeProxy, owner, depositApprover, usdt, {
           l1SenderSignedOverride: rando.address,
         })
-      ).to.be.revertedWith("grvtBP: invalid signature")
+      ).to.be.revertedWith("invalid signature")
     })
 
     it("Should reject a deposit with different l2Receiver in signature and tx", async function () {
@@ -111,7 +126,7 @@ describe("GRVTBridgeProxy", function () {
         testDeposit(grvtBridgeProxy, owner, depositApprover, usdt, {
           l2ReceiverSignedOverride: rando.address,
         })
-      ).to.be.revertedWith("grvtBP: invalid signature")
+      ).to.be.revertedWith("invalid signature")
     })
 
     it("Should reject a deposit with different amount in signature and tx", async function () {
@@ -124,7 +139,7 @@ describe("GRVTBridgeProxy", function () {
           approvedAmount: TEST_AMOUNT,
           depositAmount: TEST_AMOUNT,
         })
-      ).to.be.revertedWith("grvtBP: invalid signature")
+      ).to.be.revertedWith("invalid signature")
     })
 
     it("Should reject a deposit where msg.sender doesn't have enough token", async function () {
@@ -146,7 +161,7 @@ describe("GRVTBridgeProxy", function () {
         testDeposit(grvtBridgeProxy, owner, depositApprover, usdt, {
           depositApproverOverride: rando,
         })
-      ).to.be.revertedWith("grvtBP: invalid signature")
+      ).to.be.revertedWith("invalid signature")
     })
 
     it("Should reject a deposit with token not allowed", async function () {
@@ -155,7 +170,7 @@ describe("GRVTBridgeProxy", function () {
         testDeposit(grvtBridgeProxy, owner, depositApprover, usdt, {
           skipAddAllowedToken: true,
         })
-      ).to.be.revertedWith("grvtBP: L1 token not allowed")
+      ).to.be.revertedWith("L1 token not allowed")
     })
 
     it("Should reject a deposit without approval", async function () {
@@ -269,7 +284,7 @@ describe("GRVTBridgeProxy", function () {
       })
       await expect(
         testClaimFailedDeposit(grvtBridgeProxy, owner, depositApprover, usdt, mockL1SharedBridge, {})
-      ).to.be.revertedWith("grvtBP: invalid proof")
+      ).to.be.revertedWith("invalid proof")
     })
 
     it("Should reject a failed deposit claim if amount is wrong", async function () {
@@ -281,7 +296,7 @@ describe("GRVTBridgeProxy", function () {
           depositAmount: TEST_AMOUNT,
           claimAmount: TEST_AMOUNT + 1,
         })
-      ).to.be.revertedWith("grvtBP: deposit did not happen")
+      ).to.be.revertedWith("deposit did not happen")
     })
 
     it("Should reject a failed deposit claim if deposit sender is wrong", async function () {
@@ -292,7 +307,7 @@ describe("GRVTBridgeProxy", function () {
         testClaimFailedDeposit(grvtBridgeProxy, owner, depositApprover, usdt, mockL1SharedBridge, {
           claimDepositSenderOverride: depositApprover.address,
         })
-      ).to.be.revertedWith("grvtBP: deposit did not happen")
+      ).to.be.revertedWith("deposit did not happen")
     })
 
     it("Should reject a failed deposit claim if token is wrong", async function () {
@@ -303,7 +318,7 @@ describe("GRVTBridgeProxy", function () {
         testClaimFailedDeposit(grvtBridgeProxy, owner, depositApprover, usdt, mockL1SharedBridge, {
           claimL1TokenOverride: depositApprover.address,
         })
-      ).to.be.revertedWith("grvtBP: deposit did not happen")
+      ).to.be.revertedWith("deposit did not happen")
     })
 
     it("Should reject a failed deposit claim if tx hash is wrong", async function () {
@@ -314,7 +329,7 @@ describe("GRVTBridgeProxy", function () {
         testClaimFailedDeposit(grvtBridgeProxy, owner, depositApprover, usdt, mockL1SharedBridge, {
           depositL2TxHashOverride: ethers.keccak256(owner.address),
         })
-      ).to.be.revertedWith("grvtBP: deposit did not happen")
+      ).to.be.revertedWith("deposit did not happen")
     })
   })
 
@@ -565,6 +580,11 @@ async function deployGRVTBridgeProxyFixture({
 
   await grvtBaseToken.grantRole(await grvtBaseToken.MINTER_ROLE(), grvtBridgeProxy.target)
   await grvtBridgeProxy.approveBaseToken(mockL1SharedBridge.target, ethers.MaxUint256)
+  await grvtBridgeProxy.setL2DepositProxyAddressDerivationParams({
+    exchangeAddress: "0x4a38db7321b4f3f041e14c4cd63df40fe108f162",
+    beaconProxyBytecodeHash: "0x0100010965f47574acde5c31b36ada1f247fa8a94744d0fbf7e107c014d2b90a",
+    depositProxyBeacon: "0x3B32454F03e7aD9dE1ab6E8Ec0Dee6aBfEBD7DCC",
+  })
 
   return {
     grvtBridgeProxy,
