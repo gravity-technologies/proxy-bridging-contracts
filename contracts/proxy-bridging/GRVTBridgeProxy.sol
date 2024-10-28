@@ -204,6 +204,12 @@ contract GRVTBridgeProxy is Ownable2StepUpgradeable, ReentrancyGuardUpgradeable 
 
   /**
    * @dev Initiates a deposit request. Ensures the request is signed by the deposit approver.
+   * @dev The tokens are bridged to a deposit proxy contract associated with _l2Receiver,
+   * @dev rather than directly to _l2Receiver. Each account has its own deposit proxy contract
+   * @dev that is deployed when the funding account is created on L2. The deposit proxy contract
+   * @dev is deployed using CREATE2, allowing deterministic address derivation from the account ID.
+   * @dev This is so that the L2 exchange contract can retrieve the bridged tokens from the deposit proxy
+   * @dev contract and credit the receiver's funding account.
    * @dev Assumptions:
    * @dev 1. enough base token allowance from this contract to shared bridge
    * @dev 2. enough l1Token allowance from msg.sender to this contract
