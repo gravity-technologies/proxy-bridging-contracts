@@ -15,5 +15,9 @@
     "ProxySetup": {
         "l1SharedBridge": "0x8AFA068ea01a3cD622E4f311c32C36513f8c93B3",
         "governanceAddress": "0x97318Cc3e845D98B4D7f9A92D7303728094e6413"
+    },
+    "GRVTTransactionFilterer": {
+        "ownerAddress": "0x883aF3F53f2e27bbC139D54eAFf1b328c3A3059F",
+        "upgradableProxyAdminOwnerAddress": "0x2e0C121c49F86f870354b2c7b13584f1D6EcbF43"
     }
 }
