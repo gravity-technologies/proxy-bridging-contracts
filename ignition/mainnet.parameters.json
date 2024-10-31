@@ -1,0 +1,8 @@
+{
+    "GRVTBaseToken": {
+        "defaultAdmin": "0x6efB5ABAfD23c1317906666B9Df8514AAB704871",
+        "upgradableProxyAdminOwnerAddress": "0x8eaFB3AB784bd07aB0e0bBBBA7cFFE88703fE4b5",
+        "operator": "0x6efB5ABAfD23c1317906666B9Df8514AAB704871",
+        "l1SharedBridge": "0xD7f9f54194C633F36CCD5F3da84ad4a1c38cB2cB"
+    }
+}
